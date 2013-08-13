@@ -28,6 +28,7 @@ dVideo.extension = function( client ) {
             href: '#call',
             handler: function(  ) { 
                 dVideo.create_phone( client );
+                //dVideo.phone.something();
             }
         });
         

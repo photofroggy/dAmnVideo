@@ -1,8 +1,8 @@
 
 var dVideo = {};
-dVideo.VERSION = '0.0.1';
+dVideo.VERSION = '0.0.2';
 dVideo.STATE = 'alpha';
-dVideo.REVISION = '0.0.1';
+dVideo.REVISION = '0.0.2';
 dVideo.bots = [ 'botdom', 'damnphone' ];
 dVideo.peer_options = {
     iceServers: [
@@ -78,142 +78,7 @@ dVideo.extension = function( client ) {
             href: '#call',
             handler: function(  ) { 
                 dVideo.create_phone( client );
-            }
-        });
-    };
-    var cmds = {
-    };
-    var handle = {
-    };
-    init();
-};
-dVideo.create_phone = function( client ) {
-    if( dVideo.phone )
-        return;
-    dVideo.phone = new dVideo.Phone( client );
-};
-dVideo.Phone = function( client ) {
-    console.log('making phone');
-    '@' )
-                return;
-            var user = event.param[0];
-            var pns = event.param[1];
-            'BDS:PEER:REJECT:' + pns + ',' + user + ',You have been blocked');
-                return;
-            }
-            if( client.away.on ) {
-                client.npmsg(event.ns, 'BDS:PEER:REJECT:'+pns+','+user+',Away; ' + client.away.reason);
-                return;
-            }
-            if( phone.call != null ) {
-                if( !phone.call.group ) {
-                    client.npmsg( event.ns, 'BDS:PEER:REJECT:' + pns + ',' + user + ',Already in a call' );
-                    return;
-                }
-            }
-            client.npmsg(event.ns, 'BDS:PEER:ACK:' + pns + ',' + user);
-            't really need to do anything here
-        '@' )
-                return;
-            '@' )
-                return;
-            if( !phone.call )
-                return;
-            var call = dVideo.phone.call;
-            var pns = event.param[0];
-            var user = event.param[1];
-            var chan = event.param[2] || event.ns;
-            if( user.toLowerCase() != client.settings.username.toLowerCase() )
-                return;
-            var peer = phone.call.new_peer( pns, event.user );
-            if( !peer ) {
-                return;
-            }
-            peer.conn.ready(
-                function(  ) {
-                    dVideo.signal.offer( peer );
-                }
-            );
-        },
-        open: function( event ) {},
-        end: function( event ) {},
-        offer: function( event ) {
-            if( event.sns[0] != '@' )
-                return;
-            if( !phone.call )
-                return;
-            var call = phone.call;
-            var pns = event.param[0];
-            var user = event.param[1];
-            var target = event.param[2];
-            var offer = new dVideo.RTC.SessionDescription( JSON.parse( event.param.slice(3).join(',') ) );
-            if( target.toLowerCase() != client.settings.username.toLowerCase() )
-                return;
-            'You have been blocked' );
-                return;
-            }
-            if( client.away.on ) {
-                dVideo.signal.reject( user, 'Away, reason: ' + client.away.reason );
-                return;
-            }
-            var peer = call.peer( user );
-            if( !peer ) {
-                if( !call.group )
-                    return;
-                peer = call.new_peer( pns, user );
-            }
-            peer.conn.ready(
-                function(  ) {
-                    dVideo.signal.answer( peer );
-                    console.log('new peer',peer.user);
-                },
-                offer
-            );
-        },
-        answer: function( event ) {
-            if( event.sns[0] != '@' )
-                return;
-            if( !phone.call )
-                return;
-            var call = phone.call;
-            var pns = event.param[0];
-            var user = event.param[1];
-            var target = event.param[2];
-            var offer = new dVideo.RTC.SessionDescription( JSON.parse( event.param.slice(3).join(',') ) );
-            if( target.toLowerCase() != client.settings.username.toLowerCase() )
-                return;
-            var peer = call.peer( user );
-            if( !peer )
-                return;
-            peer.conn.open(
-                function(  ) {
-                    console.log('> connected to new peer ' + peer.user);
-                },
-                offer
-            );
-        },
-        candidate: function( event ) {
-            if( event.sns[0] != '@' )
-                return;
-            if( !phone.call )
-                return;
-            var call = phone.call;
-            var pns = event.param[0];
-            var user = event.param[1];
-            var target = event.param[2];
-            var candidate = new dVideo.RTC.SessionDescription( JSON.parse( event.param.slice(3).join(',') ) );
-            if( target.toLowerCase() != client.settings.username.toLowerCase() )
-                return;
-            var peer = call.peer( user );
-            if( !peer )
-                return;
-            peer.conn.candidate( candidate );
-        },
-        close: function( event ) {},
-    };
-};
-dVideo.Phone.prototype.build = function(  ) {
-    this.client.ui.view.append('<div class="phone"></div>');
+                '<div class="phone"></div>');
     this.view = this.client.ui.view.find('div.phone');
 };
 dVideo.Phone.prototype.get_media = function( success, err ) {
@@ -225,7 +90,6 @@ dVideo.Phone.prototype.get_media = function( success, err ) {
         function( stream ) {
             dVideo.phone.got_media( stream );
             success( stream );
-            console.log( 'got stream' );
         },
         function( error ) {
             err( error );
@@ -397,6 +261,121 @@ dVideo.SignalChannel.prototype.list = function( channel ) {
     channel = channel ? ':' + channel : '';
     this.client.npmsg( this.bds, 'BDS:PEER:LIST' + channel );
 };
+'@' )
+        return;
+    var user = event.param[0];
+    var pns = event.param[1];
+    'BDS:PEER:REJECT:' + pns + ',' + user + ',You have been blocked');
+        return false;
+    }
+    if( this.client.away.on ) {
+        this.client.npmsg(event.ns, 'BDS:PEER:REJECT:'+pns+','+user+',Away; ' + client.away.reason);
+        return false;
+    }
+    if( phone.call != null ) {
+        if( !phone.call.group ) {
+            this.client.npmsg( event.ns, 'BDS:PEER:REJECT:' + pns + ',' + user + ',Already in a call' );
+            return false;
+        }
+    }
+    this.client.npmsg(event.ns, 'BDS:PEER:ACK:' + pns + ',' + user);
+    '@' )
+        return;
+    '@' )
+        return;
+    if( !phone.call )
+        return;
+    var call = dVideo.phone.call;
+    var pns = event.param[0];
+    var user = event.param[1];
+    var chan = event.param[2] || event.ns;
+    if( user.toLowerCase() != client.settings.username.toLowerCase() )
+        return;
+    var peer = phone.call.new_peer( pns, event.user );
+    if( !peer ) {
+        return;
+    }
+    peer.conn.ready(
+        function(  ) {
+            dVideo.signal.offer( peer );
+        }
+    );
+};
+dVideo.SignalChannel.prototype.on_open = function( event ) {};
+dVideo.SignalChannel.prototype.on_end = function( event ) {};
+dVideo.SignalChannel.prototype.on_offer = function( event ) {
+    if( event.sns[0] != '@' )
+        return;
+    if( !phone.call )
+        return;
+    var call = phone.call;
+    var pns = event.param[0];
+    var user = event.param[1];
+    var target = event.param[2];
+    var offer = new dVideo.RTC.SessionDescription( JSON.parse( event.param.slice(3).join(',') ) );
+    if( target.toLowerCase() != client.settings.username.toLowerCase() )
+        return;
+    'You have been blocked' );
+        return;
+    }
+    if( client.away.on ) {
+        dVideo.signal.reject( user, 'Away, reason: ' + client.away.reason );
+        return;
+    }
+    var peer = call.peer( user );
+    if( !peer ) {
+        if( !call.group )
+            return;
+        peer = call.new_peer( pns, user );
+    }
+    peer.conn.ready(
+        function(  ) {
+            dVideo.signal.answer( peer );
+            console.log('new peer',peer.user);
+        },
+        offer
+    );
+};
+dVideo.SignalChannel.prototype.on_answer = function( event ) {
+    if( event.sns[0] != '@' )
+        return;
+    if( !phone.call )
+        return;
+    var call = phone.call;
+    var pns = event.param[0];
+    var user = event.param[1];
+    var target = event.param[2];
+    var offer = new dVideo.RTC.SessionDescription( JSON.parse( event.param.slice(3).join(',') ) );
+    if( target.toLowerCase() != client.settings.username.toLowerCase() )
+        return;
+    var peer = call.peer( user );
+    if( !peer )
+        return;
+    peer.conn.open(
+        function(  ) {
+            console.log('> connected to new peer ' + peer.user);
+        },
+        offer
+    );
+};
+dVideo.SignalChannel.prototype.on_candidate = function( event ) {
+    if( event.sns[0] != '@' )
+        return;
+    if( !phone.call )
+        return;
+    var call = phone.call;
+    var pns = event.param[0];
+    var user = event.param[1];
+    var target = event.param[2];
+    var candidate = new dVideo.RTC.SessionDescription( JSON.parse( event.param.slice(3).join(',') ) );
+    if( target.toLowerCase() != client.settings.username.toLowerCase() )
+        return;
+    var peer = call.peer( user );
+    if( !peer )
+        return;
+    peer.conn.candidate( candidate );
+};
+dVideo.SignalChannel.prototype.on_close = function( event ) {};
 dVideo.peer_connection = function( user, remote ) {
     if( !dVideo.RTC.PeerConnection )
         return null;
