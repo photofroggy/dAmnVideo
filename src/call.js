@@ -7,6 +7,7 @@
  * @param ns {String} dAmn channel the call is connected to
  * @param pns {String} Peer namespace the call is associated with
  * @param [user=pns.user] {String} User who started the call
+ * @since 0.0.0
  */
 dVideo.Phone.Call = function( phone, bds, ns, pns, user ) {
 

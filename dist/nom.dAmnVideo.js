@@ -93,6 +93,7 @@ dVideo.create_phone = function( client ) {
     dVideo.phone = new dVideo.Phone( client );
 };
 dVideo.Phone = function( client ) {
+    console.log('making phone');
     '@' )
                 return;
             var user = event.param[0];
@@ -214,6 +215,27 @@ dVideo.Phone = function( client ) {
 dVideo.Phone.prototype.build = function(  ) {
     this.client.ui.view.append('<div class="phone"></div>');
     this.view = this.client.ui.view.find('div.phone');
+};
+dVideo.Phone.prototype.get_media = function( success, err ) {
+    var stub = function(  ) {};
+    success = success || stub;
+    err = err || stub;
+    dVideo.getUserMedia(
+        { video: true, audio: true },
+        function( stream ) {
+            dVideo.phone.got_media( stream );
+            success( stream );
+            console.log( 'got stream' );
+        },
+        function( error ) {
+            err( error );
+            console.log( error );
+        }
+    );
+};
+dVideo.Phone.prototype.got_media = function( stream ) {
+    dVideo.phone.url = URL.createObjectURL( stream );
+    dVideo.phone.stream = stream;
 };
 dVideo.Phone.prototype.dial = function( bds, pns, ns, host ) {
     if( this.call != null )

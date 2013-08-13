@@ -194,8 +194,11 @@ dVideo.create_phone = function( client ) {
  * @class dVideo.Phone
  * @constructor
  * @param client {Object} Reference to the wsc client
+ * @since 0.0.0
  */
 dVideo.Phone = function( client ) {
+
+    console.log('making phone');
 
     // SET PROPERTIES
     this.call = null;
@@ -412,6 +415,49 @@ dVideo.Phone.prototype.build = function(  ) {
 
 };
 
+
+/**
+ * Get the webcam and microphone streams.
+ * 
+ * @method get_media
+ * @param [success] {Function} Callback to fire when we have the streams
+ * @param [err] {Function} Callback to fire when there is an error
+ */
+dVideo.Phone.prototype.get_media = function( success, err ) {
+
+    var stub = function(  ) {};
+    success = success || stub;
+    err = err || stub;
+    
+    dVideo.getUserMedia(
+        { video: true, audio: true },
+        function( stream ) {
+            dVideo.phone.got_media( stream );
+            success( stream );
+            console.log( 'got stream' );
+        },
+        function( error ) {
+            err( error );
+            console.log( error );
+        }
+    );
+
+};
+
+/**
+ * What to do when we have the webcam stream.
+ *
+ * @method got_media
+ * @param stream {Object} Webcam stream
+ */
+dVideo.Phone.prototype.got_media = function( stream ) {
+
+    dVideo.phone.url = URL.createObjectURL( stream );
+    dVideo.phone.stream = stream;
+
+};
+
+
 /**
  * Start or join a call.
  * @method dial
@@ -568,6 +614,7 @@ dVideo.Phone.prototype.answer = function( bds, ns, pns, user ) {
  * @param ns {String} dAmn channel the call is connected to
  * @param pns {String} Peer namespace the call is associated with
  * @param [user=pns.user] {String} User who started the call
+ * @since 0.0.0
  */
 dVideo.Phone.Call = function( phone, bds, ns, pns, user ) {
 
@@ -811,6 +858,7 @@ dVideo.peer_connection = function( user, remote ) {
  * @constructor
  * @param user {String} User the connection is associated with
  * @param [remote_offer=null] {String} Descriptor for a remote offer.
+ * @since 0.0.0
  */
 dVideo.PeerConnection = function( user, remote_offer ) {
 

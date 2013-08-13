@@ -22,6 +22,7 @@ dVideo.peer_connection = function( user, remote ) {
  * @constructor
  * @param user {String} User the connection is associated with
  * @param [remote_offer=null] {String} Descriptor for a remote offer.
+ * @since 0.0.0
  */
 dVideo.PeerConnection = function( user, remote_offer ) {
 
