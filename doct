@@ -1,0 +1,4 @@
+#!/bin/sh
+echo ">>    Generating documentation..."
+
+yuidoc -t ~/Code/yuitheme/dAmnVideo/ -o ~/Web/static/dAmnVideo/api/ src/
