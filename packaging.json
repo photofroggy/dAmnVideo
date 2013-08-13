@@ -10,7 +10,15 @@
         {
             "dest": "dist/dAmnVideo.js",
             "mini": "dist/dAmnVideo.min.js",
-            "files": "src/"
+            "files": [
+                "src/base.js",
+                "src/webrtc.js",
+                "src/extension.js",
+                "src/phone.js",
+                "src/call.js",
+                "src/signalchannel.js",
+                "src/peerconnection.js"
+            ]
         },
         {
             "sass": true,

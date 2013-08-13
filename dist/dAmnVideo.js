@@ -4,9 +4,9 @@
  * @module dVideo
  */
 var dVideo = {};
-dVideo.VERSION = '0.0.0';
+dVideo.VERSION = '0.0.1';
 dVideo.STATE = 'alpha';
-dVideo.REVISION = '0.0.0';
+dVideo.REVISION = '0.0.1';
 
 
 /**
@@ -68,112 +68,64 @@ dVideo.chan.group = false;
 dVideo.chan.calls = [];
 
 /**
- * Call object. Maybe a bit over the top here.
- * @class dVideo.Phone.Call
- * @constructor
- * @param phone {Object} Phone the call is being made on
- * @param bds {String} dAmn channel being used for bds messages
- * @param ns {String} dAmn channel the call is connected to
- * @param pns {String} Peer namespace the call is associated with
- * @param [user=pns.user] {String} User who started the call
+ * webRTC objects
  */
-dVideo.Phone.Call = function( phone, bds, ns, pns, user ) {
+dVideo.RTC = {
+    PeerConnection: null,
+    SessionDescription: null,
+    IceCandidate: null,
+}
 
-    this.phone = phone;
-    this.bds = bds;
-    this.pns = pns;
-    this.ns = ns;
-    this.user = '';
-    this.peers = {};
-    
-    this.spns = this.pns.split('-');
-    this.ans = this.spns.shift();
-    this.rns = this.spns.join(' ');
-    this.group = dVideo.bots.indexOf( this.ns.substr( 1 ) ) != -1;
-    
-    this.user = user || this.spns[0].substr(1);
-    
-    this.dans = phone.client.deform_ns( this.ans );
-    
-    dVideo.create_signaling_channel( this.phone.client, bds, pns, ns );
-    
-    dVideo.getUserMedia(
-        { video: true, audio: true },
-        function( stream ) {
-            dVideo.phone.url = URL.createObjectURL( stream );
-            dVideo.phone.stream = stream;
-            console.log( 'got stream' );
-        },
-        function( err ) {
-            console.log( err );
-        }
-    );
+dVideo._gum = function() {};
+
+dVideo.getUserMedia = function( options, success, error ) {
+
+    return dVideo._gum( options, success, error );
 
 };
 
-/**
- * Close the call.
- * @method close
- */
-dVideo.Phone.Call.prototype.close = function(  ) {
-
-    for( var p in this.peers ) {
+if( window.mozRTCPeerConnection ) {
+    dVideo.RTC.PeerConnection = mozRTCPeerConnection;
+    dVideo.RTC.SessionDescription = mozRTCSessionDescription;
+    dVideo.RTC.IceCandidate = mozRTCIceCandidate;
     
-        if( !this.peers.hasOwnProperty( p ) )
-            continue;
-        
-        this.peers[p].conn.close();
+    dVideo._gum = function( options, success, error ) {
     
-    }
-
-};
-
-/**
- * Add a new peer to the call.
- * @method new_peer
- * @param pns {String} Peer namespace for the call
- * @param user {String} Name of the peer
- * @return {Object} New peer connection object or null if failed
- */
-dVideo.Phone.Call.prototype.new_peer = function( pns, user ) {
+        return navigator.mozGetUserMedia( options, success, error );
     
-    if( this.pns != pns )
-        return null;
-    
-    if( !this.group ) {
-    
-        if( this.dans.substr(1).toLowerCase() != user.toLowerCase() )
-            return null;
-    
-    }
-    
-    var peer = {
-        user: user,
-        conn: dVideo.peer_connection( user ),
-        stream: null,
-        url: null
     };
     
-    this.peers[user] = peer;
-    return peer;
+}
 
-};
+if( window.webkitRTCPeerConnection ) {
+    dVideo.RTC.PeerConnection = webkitRTCPeerConnection;
+    
+    dVideo._gum = function( options, success, error ) {
+    
+        return navigator.webkitGetUserMedia( options, success, error );
+    
+    };
+}
 
-/**
- * Get a peer.
- * @method peer
- * @param peer {String} Name of the peer
- * @return {Object} Peer connection object or null
- */
-dVideo.Phone.Call.prototype.peer = function( peer ) {
+if( window.RTCPeerConnection ) {
+    dVideo.RTC.PeerConnection = RTCPeerConnection;
+    
+    dVideo._gum = function( options, success, error ) {
+    
+        return navigator.getUserMedia( options, success, error );
+    
+    };
+}
 
-    return this.peers[peer] || null;
+if( window.RTCSessionDescription ) {
 
-};
+    dVideo.RTC.SessionDescription = RTCSessionDescription;
+    dVideo.RTC.IceCandidate = RTCIceCandidate;
 
+}
 
 dVideo.extension = function( client ) {
-
+    
     if( !dVideo.RTC.PeerConnection )
         return;
     
@@ -221,256 +173,6 @@ dVideo.extension = function( client ) {
     };
     
     init();
-
-};/**
- * lol
- *
- * Make a peer connection.
- */
-dVideo.peer_connection = function( user, remote ) {
-
-    if( !dVideo.RTC.PeerConnection )
-        return null;
-    
-    return new dVideo.PeerConnection( user, remote );
-
-};
-
-
-/**
- * Our own wrapper for RTCPeerConnection objects.
- * 
- * Because boilerplate? Yeah, that.
- *
- * @class dVideo.PeerConnection
- * @constructor
- * @param user {String} User the connection is associated with
- * @param [remote_offer=null] {String} Descriptor for a remote offer.
- */
-dVideo.PeerConnection = function( user, remote_offer ) {
-
-    this.user = user;
-    this.pc = new dVideo.RTC.PeerConnection( dVideo.peer_options );
-    this.offer = '';
-    this.remote_offer = remote_offer || null;
-    this.responding = this.remote_offer != null;
-    this.streamed = false;
-    
-    this.bindings();
-    
-    if( this.remote_offer )
-        this.set_remote_description( this.remote_offer );
-
-};
-
-/**
- * Set up event bindings for the peer connection.
- * @method bindings
- */
-dVideo.PeerConnection.prototype.bindings = function(  ) {
-
-    var pc = this;
-    var user = this.user;
-    
-    // For those things that still do things in ice candidate mode or whatever.
-    this.pc.onicecandidate = function( candidate ) {
-        dVideo.signal.candidate( dVideo.phone.call.peer( user ), candidate );
-    };
-    
-    // Stub event handler
-    var stub = function() {};
-    this.onready = stub;
-    this.onopen = stub;
-
-};
-
-/**
- * Ready the connection.
- * 
- * Callback fired when the connection is ready to be opened. IE, when a local
- * offer is set. Signalling channels should be used to transfer offer information.
- * 
- * If a remote offer is provided, then the object generates an answer for the
- * offer.
- * 
- * @method ready
- * @param onready {Function} Callback to fire when the connection is ready
- * @param [remote=null] {String} Descriptor for a remote offer
- */
-dVideo.PeerConnection.prototype.ready = function( onready, remote ) {
-
-    this.onready = onready || this.onready;
-    this.remote_offer = remote || this.remote_offer;
-    this.responding = this.remote_offer != null;
-    
-    if( this.responding ) {
-        var onopen = this.onopen;
-        var pc = this;
-        
-        this.onopen = function( ) {
-        
-            pc.answer();
-            pc.onopen = onopen;
-        
-        };
-        
-        this.set_remote_description( this.remote_offer );
-        return;
-    }
-    
-    this.create_offer();
-
-};
-
-/**
- * Open a connection to a remote peer.
- *
- * @method open
- * @param onopen {Function} Callback to fire when the connection is open
- * @param [offer=null] {String} Descriptor for the remote connection
- */
-dVideo.PeerConnection.prototype.open = function( onopen, offer ) {
-
-    if( !this.offer )
-        return;
-    
-    this.remote_offer = offer || this.remote_offer;
-    this.onopen = onopen;
-    
-    if( !this.remote_offer )
-        return;
-    
-    this.set_remote_description( this.remote_offer );
-
-};
-
-/**
- * Close a connection
- * @method close
- */
-dVideo.PeerConnection.prototype.close = function(  ) {
-
-    this.pc.close();
-
-};
-
-/**
- * Method usually called on errors.
- * @method onerror
- */
-dVideo.PeerConnection.prototype.onerror = function( err ) {
-
-    console.log( '>> Got an error:', '"', err.message, '"', err );
-
-};
-
-/**
- * Add an Ice Candidate to the peer connection.
- * 
- * @method candidate
- * @param candidate {Object} Ice Candidate
- */
-dVideo.PeerConnection.prototype.candidate = function( candidate ) {
-
-    this.pc.addIceCandidate( candidate );
-
-};
-
-/**
- * Create an offer for a connection.
- *
- * Helper method.
- * @method create_offer
- */
-dVideo.PeerConnection.prototype.create_offer = function(  ) {
-
-    var pc = this;
-    
-    this.pc.createOffer(
-        function( description ) { pc.offer_created( description ); },
-        function( err ) { pc.onerror( err ); }
-    );
-
-};
-
-/**
- * An offer has been created! Set it as our local description.
- * @method offer_created
- * @param description {String} Descriptor for the offer.
- */
-dVideo.PeerConnection.prototype.offer_created = function( description ) {
-
-    this.offer = description;
-    var pc = this;
-    
-    this.pc.setLocalDescription( this.offer , function(  ) { pc.local_description_set(); }, this.onerror );
-
-};
-
-/**
- * Set the descriptor for the remote connection.
- * @method set_remote_description
- * @param description {String} Descriptor for the remote connection
- */
-dVideo.PeerConnection.prototype.set_remote_description = function( description ) {
-
-    this.remote_offer = description;
-    var pc = this;
-    
-    this.pc.setRemoteDescription( this.remote_offer , function(  ) { pc.remote_description_set(); }, this.onerror );
-
-};
-
-/**
- * A local description as been set. Handle it!
- * @method local_description_set
- */
-dVideo.PeerConnection.prototype.local_description_set = function(  ) {
-
-    this.onready();
-
-};
-
-/**
- * A local description as been set. Handle it!
- * @method remote_description_set
- */
-dVideo.PeerConnection.prototype.remote_description_set = function(  ) {
-
-    this.onopen();
-
-};
-
-/**
- * Create an answer for a remote offer.
- * @method answer
- */
-dVideo.PeerConnection.prototype.answer = function(  ) {
-
-    var pc = this;
-    this.responding = true;
-    
-    this.pc.createAnswer( 
-        function( answer ) { pc.answer_created( answer ); },
-        function( err ) { pc.onerror( err ); }
-    );
-
-};
-
-/**
- * Answer has been created. Send away, or something.
- * @method answer_created
- * @param answer {String} Descriptor for answer.
- */
-dVideo.PeerConnection.prototype.answer_created = function( answer ) {
-
-    this.offer = answer;
-    var pc = this;
-    
-    this.pc.setLocalDescription( this.offer,
-        function(  ) { pc.local_description_set(); },
-        function( err ) { pc.onerror( err ); }
-    );
 
 };
 /**
@@ -858,6 +560,109 @@ dVideo.Phone.prototype.answer = function( bds, ns, pns, user ) {
 
 };
 /**
+ * Call object. Maybe a bit over the top here.
+ * @class dVideo.Phone.Call
+ * @constructor
+ * @param phone {Object} Phone the call is being made on
+ * @param bds {String} dAmn channel being used for bds messages
+ * @param ns {String} dAmn channel the call is connected to
+ * @param pns {String} Peer namespace the call is associated with
+ * @param [user=pns.user] {String} User who started the call
+ */
+dVideo.Phone.Call = function( phone, bds, ns, pns, user ) {
+
+    this.phone = phone;
+    this.bds = bds;
+    this.pns = pns;
+    this.ns = ns;
+    this.user = '';
+    this.peers = {};
+    
+    this.spns = this.pns.split('-');
+    this.ans = this.spns.shift();
+    this.rns = this.spns.join(' ');
+    this.group = dVideo.bots.indexOf( this.ns.substr( 1 ) ) != -1;
+    
+    this.user = user || this.spns[0].substr(1);
+    
+    this.dans = phone.client.deform_ns( this.ans );
+    
+    dVideo.create_signaling_channel( this.phone.client, bds, pns, ns );
+    
+    dVideo.getUserMedia(
+        { video: true, audio: true },
+        function( stream ) {
+            dVideo.phone.url = URL.createObjectURL( stream );
+            dVideo.phone.stream = stream;
+            console.log( 'got stream' );
+        },
+        function( err ) {
+            console.log( err );
+        }
+    );
+
+};
+
+/**
+ * Close the call.
+ * @method close
+ */
+dVideo.Phone.Call.prototype.close = function(  ) {
+
+    for( var p in this.peers ) {
+    
+        if( !this.peers.hasOwnProperty( p ) )
+            continue;
+        
+        this.peers[p].conn.close();
+    
+    }
+
+};
+
+/**
+ * Add a new peer to the call.
+ * @method new_peer
+ * @param pns {String} Peer namespace for the call
+ * @param user {String} Name of the peer
+ * @return {Object} New peer connection object or null if failed
+ */
+dVideo.Phone.Call.prototype.new_peer = function( pns, user ) {
+    
+    if( this.pns != pns )
+        return null;
+    
+    if( !this.group ) {
+    
+        if( this.dans.substr(1).toLowerCase() != user.toLowerCase() )
+            return null;
+    
+    }
+    
+    var peer = {
+        user: user,
+        conn: dVideo.peer_connection( user ),
+        stream: null,
+        url: null
+    };
+    
+    this.peers[user] = peer;
+    return peer;
+
+};
+
+/**
+ * Get a peer.
+ * @method peer
+ * @param peer {String} Name of the peer
+ * @return {Object} Peer connection object or null
+ */
+dVideo.Phone.Call.prototype.peer = function( peer ) {
+
+    return this.peers[peer] || null;
+
+};
+/**
  * This object represents a signalling channel used for transmitting connection data
  * between two peers.
  *
@@ -983,58 +788,253 @@ dVideo.SignalChannel.prototype.list = function( channel ) {
 
 };
 /**
- * webRTC objects
+ * lol
+ *
+ * Make a peer connection.
  */
-dVideo.RTC = {
-    PeerConnection: null,
-    SessionDescription: null,
-    IceCandidate: null,
-}
+dVideo.peer_connection = function( user, remote ) {
 
-dVideo._gum = function() {};
-
-dVideo.getUserMedia = function( options, success, error ) {
-
-    return dVideo._gum( options, success, error );
+    if( !dVideo.RTC.PeerConnection )
+        return null;
+    
+    return new dVideo.PeerConnection( user, remote );
 
 };
 
-if( window.mozRTCPeerConnection ) {
-    dVideo.RTC.PeerConnection = mozRTCPeerConnection;
-    dVideo.RTC.SessionDescription = mozRTCSessionDescription;
-    dVideo.RTC.IceCandidate = mozRTCIceCandidate;
+
+/**
+ * Our own wrapper for RTCPeerConnection objects.
+ * 
+ * Because boilerplate? Yeah, that.
+ *
+ * @class dVideo.PeerConnection
+ * @constructor
+ * @param user {String} User the connection is associated with
+ * @param [remote_offer=null] {String} Descriptor for a remote offer.
+ */
+dVideo.PeerConnection = function( user, remote_offer ) {
+
+    this.user = user;
+    this.pc = new dVideo.RTC.PeerConnection( dVideo.peer_options );
+    this.offer = '';
+    this.remote_offer = remote_offer || null;
+    this.responding = this.remote_offer != null;
+    this.streamed = false;
     
-    dVideo._gum = function( options, success, error ) {
+    this.bindings();
     
-        return navigator.mozGetUserMedia( options, success, error );
+    if( this.remote_offer )
+        this.set_remote_description( this.remote_offer );
+
+};
+
+/**
+ * Set up event bindings for the peer connection.
+ * @method bindings
+ */
+dVideo.PeerConnection.prototype.bindings = function(  ) {
+
+    var pc = this;
+    var user = this.user;
     
+    // For those things that still do things in ice candidate mode or whatever.
+    this.pc.onicecandidate = function( candidate ) {
+        dVideo.signal.candidate( dVideo.phone.call.peer( user ), candidate );
     };
     
-}
+    // Stub event handler
+    var stub = function() {};
+    this.onready = stub;
+    this.onopen = stub;
 
-if( window.webkitRTCPeerConnection ) {
-    dVideo.RTC.PeerConnection = webkitRTCPeerConnection;
-    
-    dVideo._gum = function( options, success, error ) {
-    
-        return navigator.webkitGetUserMedia( options, success, error );
-    
-    };
-}
+};
 
-if( window.RTCPeerConnection ) {
-    dVideo.RTC.PeerConnection = RTCPeerConnection;
-    
-    dVideo._gum = function( options, success, error ) {
-    
-        return navigator.getUserMedia( options, success, error );
-    
-    };
-}
+/**
+ * Ready the connection.
+ * 
+ * Callback fired when the connection is ready to be opened. IE, when a local
+ * offer is set. Signalling channels should be used to transfer offer information.
+ * 
+ * If a remote offer is provided, then the object generates an answer for the
+ * offer.
+ * 
+ * @method ready
+ * @param onready {Function} Callback to fire when the connection is ready
+ * @param [remote=null] {String} Descriptor for a remote offer
+ */
+dVideo.PeerConnection.prototype.ready = function( onready, remote ) {
 
-if( window.RTCSessionDescription ) {
+    this.onready = onready || this.onready;
+    this.remote_offer = remote || this.remote_offer;
+    this.responding = this.remote_offer != null;
+    
+    if( this.responding ) {
+        var onopen = this.onopen;
+        var pc = this;
+        
+        this.onopen = function( ) {
+        
+            pc.answer();
+            pc.onopen = onopen;
+        
+        };
+        
+        this.set_remote_description( this.remote_offer );
+        return;
+    }
+    
+    this.create_offer();
 
-    dVideo.RTC.SessionDescription = RTCSessionDescription;
-    dVideo.RTC.IceCandidate = RTCIceCandidate;
+};
 
-}
+/**
+ * Open a connection to a remote peer.
+ *
+ * @method open
+ * @param onopen {Function} Callback to fire when the connection is open
+ * @param [offer=null] {String} Descriptor for the remote connection
+ */
+dVideo.PeerConnection.prototype.open = function( onopen, offer ) {
+
+    if( !this.offer )
+        return;
+    
+    this.remote_offer = offer || this.remote_offer;
+    this.onopen = onopen;
+    
+    if( !this.remote_offer )
+        return;
+    
+    this.set_remote_description( this.remote_offer );
+
+};
+
+/**
+ * Close a connection
+ * @method close
+ */
+dVideo.PeerConnection.prototype.close = function(  ) {
+
+    this.pc.close();
+
+};
+
+/**
+ * Method usually called on errors.
+ * @method onerror
+ */
+dVideo.PeerConnection.prototype.onerror = function( err ) {
+
+    console.log( '>> Got an error:', '"', err.message, '"', err );
+
+};
+
+/**
+ * Add an Ice Candidate to the peer connection.
+ * 
+ * @method candidate
+ * @param candidate {Object} Ice Candidate
+ */
+dVideo.PeerConnection.prototype.candidate = function( candidate ) {
+
+    this.pc.addIceCandidate( candidate );
+
+};
+
+/**
+ * Create an offer for a connection.
+ *
+ * Helper method.
+ * @method create_offer
+ */
+dVideo.PeerConnection.prototype.create_offer = function(  ) {
+
+    var pc = this;
+    
+    this.pc.createOffer(
+        function( description ) { pc.offer_created( description ); },
+        function( err ) { pc.onerror( err ); }
+    );
+
+};
+
+/**
+ * An offer has been created! Set it as our local description.
+ * @method offer_created
+ * @param description {String} Descriptor for the offer.
+ */
+dVideo.PeerConnection.prototype.offer_created = function( description ) {
+
+    this.offer = description;
+    var pc = this;
+    
+    this.pc.setLocalDescription( this.offer , function(  ) { pc.local_description_set(); }, this.onerror );
+
+};
+
+/**
+ * Set the descriptor for the remote connection.
+ * @method set_remote_description
+ * @param description {String} Descriptor for the remote connection
+ */
+dVideo.PeerConnection.prototype.set_remote_description = function( description ) {
+
+    this.remote_offer = description;
+    var pc = this;
+    
+    this.pc.setRemoteDescription( this.remote_offer , function(  ) { pc.remote_description_set(); }, this.onerror );
+
+};
+
+/**
+ * A local description as been set. Handle it!
+ * @method local_description_set
+ */
+dVideo.PeerConnection.prototype.local_description_set = function(  ) {
+
+    this.onready();
+
+};
+
+/**
+ * A local description as been set. Handle it!
+ * @method remote_description_set
+ */
+dVideo.PeerConnection.prototype.remote_description_set = function(  ) {
+
+    this.onopen();
+
+};
+
+/**
+ * Create an answer for a remote offer.
+ * @method answer
+ */
+dVideo.PeerConnection.prototype.answer = function(  ) {
+
+    var pc = this;
+    this.responding = true;
+    
+    this.pc.createAnswer( 
+        function( answer ) { pc.answer_created( answer ); },
+        function( err ) { pc.onerror( err ); }
+    );
+
+};
+
+/**
+ * Answer has been created. Send away, or something.
+ * @method answer_created
+ * @param answer {String} Descriptor for answer.
+ */
+dVideo.PeerConnection.prototype.answer_created = function( answer ) {
+
+    this.offer = answer;
+    var pc = this;
+    
+    this.pc.setLocalDescription( this.offer,
+        function(  ) { pc.local_description_set(); },
+        function( err ) { pc.onerror( err ); }
+    );
+
+};

@@ -1,7 +1,7 @@
 
 
 dVideo.extension = function( client ) {
-
+    
     if( !dVideo.RTC.PeerConnection )
         return;
     
