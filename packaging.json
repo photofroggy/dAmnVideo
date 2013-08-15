@@ -17,6 +17,7 @@
                 "src/phone.js",
                 "src/call.js",
                 "src/signalchannel.js",
+                "src/signalhandler.js",
                 "src/peerconnection.js"
             ]
         },

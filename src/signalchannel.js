@@ -22,13 +22,38 @@ dVideo.SignalChannel = function( client, bds, pns, ns ) {
 };
 
 /**
- * Request a peer connection with a particular this.user.
+ * Send a command for the current signal channel.
+ * 
+ * @method command
+ * @param command {String} Command to send
+ * @param [arg1..n] {String} Arguments
+ */
+dVideo.SignalChannel.prototype.command = function(  ) {
+
+    var args = Array.prototype.slice.call(arguments);
+    var command = args.shift();
+    
+    //args.unshift( this.pns );
+    var arg = this.pns;
+    
+    for( var i = 0; i < args.length; i++ ) {
+        if( !args[i] )
+            continue;
+        arg+= ',' + args[i];
+    }
+    
+    this.client.npmsg( this.bds, 'BDS:PEER:' + command + ':' + arg );
+
+};
+
+/**
+ * Request a peer connection with a particular user.
  * 
  * @method request
  */
 dVideo.SignalChannel.prototype.request = function(  ) {
 
-    this.client.npmsg( this.bds, 'BDS:PEER:REQUEST:' + this.user + ',' + this.pns + ',' + this.nse );
+    this.command( 'REQUEST', this.user, this.ns );
 
 };
 
@@ -36,11 +61,11 @@ dVideo.SignalChannel.prototype.request = function(  ) {
  * Accept a peer connection request.
  * 
  * @method accept
- * @param auser {String} this.user to open a peer connection with
+ * @param auser {String} user to open a peer connection with
  */
 dVideo.SignalChannel.prototype.accept = function( auser ) {
 
-    this.client.npmsg( this.bds, 'BDS:PEER:ACCEPT:' + this.pns + ',' + auser + this.nse );
+    this.command( 'ACCEPT', auser, this.nse );
 
 };
 
@@ -52,7 +77,7 @@ dVideo.SignalChannel.prototype.accept = function( auser ) {
  */
 dVideo.SignalChannel.prototype.offer = function( peer ) {
 
-    this.client.npmsg( this.bds, 'BDS:PEER:OFFER:' + this.pns + ',' + this.user + ',' + peer.user + ',' + JSON.stringify( peer.conn.offer ) );
+    this.command( 'OFFER', this.user, peer.user, JSON.stringify( peer.conn.offer ) );
 
 };
 
@@ -64,7 +89,7 @@ dVideo.SignalChannel.prototype.offer = function( peer ) {
  */
 dVideo.SignalChannel.prototype.answer = function( peer ) {
 
-    this.client.npmsg( this.bds, 'BDS:PEER:ANSWER:' + this.pns + ',' + this.user + ',' + peer.user + ',' + JSON.stringify( peer.conn.offer ) );
+    this.command( 'ANSWER', this.user, peer.user, JSON.stringify( peer.conn.offer ) );
 
 };
 
@@ -78,7 +103,7 @@ dVideo.SignalChannel.prototype.answer = function( peer ) {
  */
 dVideo.SignalChannel.prototype.candidate = function( peer, candidate ) {
 
-    this.client.npmsg( this.bds, 'BDS:PEER:CANDIDATE:' + this.pns + ',' + this.user + ',' + peer.user + ',' + JSON.stringify( candidate ) );
+    this.command( 'CANDIDATE', this.user, peer.user, JSON.stringify( candidate ) );
 
 };
 
@@ -92,8 +117,7 @@ dVideo.SignalChannel.prototype.candidate = function( peer, candidate ) {
  */
 dVideo.SignalChannel.prototype.reject = function( ruser, reason ) {
 
-    reason = reason ? ',' + reason : '';
-    this.client.npmsg( this.bds, 'BDS:PEER:REJECT:' + this.pns + ',' + ruser + reason );
+    this.command( 'REJECT', ruser, reason );
 
 };
 
@@ -106,7 +130,7 @@ dVideo.SignalChannel.prototype.reject = function( ruser, reason ) {
  */
 dVideo.SignalChannel.prototype.close = function( cuser ) {
 
-    this.client.npmsg( this.bds, 'BDS:PEER:CLOSE:' + this.pns + ',' + ( cuser || this.user ) );
+    this.command( 'CLOSE', ( cuser || this.user ) );
 
 };
 
@@ -123,247 +147,3 @@ dVideo.SignalChannel.prototype.list = function( channel ) {
     this.client.npmsg( this.bds, 'BDS:PEER:LIST' + channel );
 
 };
-
-
-// EVENT HANDLERS
-
-/**
- * Handle a peer request
- * 
- * @method on_request
- * @param event {Object} Event data
- */
-dVideo.SignalChannel.prototype.on_request = function( event ) {
-    
-    if( event.sns[0] != '@' )
-        return;
-    
-    var user = event.param[0];
-    var pns = event.param[1];
-    
-    // Away or ignored
-    if( this.client.ui.umuted.indexOf( user.toLowerCase() ) != -1 ) {
-        this.client.npmsg(event.ns, 'BDS:PEER:REJECT:' + pns + ',' + user + ',You have been blocked');
-        return false;
-    }
-    
-    if( this.client.away.on ) {
-        this.client.npmsg(event.ns, 'BDS:PEER:REJECT:'+pns+','+user+',Away; ' + client.away.reason);
-        return false;
-    }
-    
-    if( phone.call != null ) {
-        if( !phone.call.group ) {
-            this.client.npmsg( event.ns, 'BDS:PEER:REJECT:' + pns + ',' + user + ',Already in a call' );
-            return false;
-        }
-    }
-    
-    this.client.npmsg(event.ns, 'BDS:PEER:ACK:' + pns + ',' + user);
-    
-    // Tell the user about the call.
-    return true;
-
-},
-
-/**
- * Handle an ack
- * Don't really need to do anything here
- * Unless we set a timeout for requests
- * 
- * @method on_ack
- * @param event {Object} Event data
- */
-dVideo.SignalChannel.prototype.on_ack = function( event ) {};
-
-
-/**
- * handle a reject
- * 
- * @method on_reject
- * @param event {Object} Event data
- */
-dVideo.SignalChannel.prototype.on_reject = function( event ) {
-    
-    if( event.sns[0] != '@' )
-        return;
-    
-    // dVideo.phone.call.close();
-    // dVideo.phone.call = null;
-
-};
-
-
-/**
- * Handle an accept
- *
- * @method on_accept
- * @param event {Object} Event data
- */
-dVideo.SignalChannel.prototype.on_accept = function( event ) {
-    
-    if( event.sns[0] != '@' )
-        return;
-    
-    if( !phone.call )
-        return;
-    
-    var call = dVideo.phone.call;
-    var pns = event.param[0];
-    var user = event.param[1];
-    var chan = event.param[2] || event.ns;
-    
-    if( user.toLowerCase() != client.settings.username.toLowerCase() )
-        return;
-    
-    var peer = phone.call.new_peer( pns, event.user );
-    
-    if( !peer ) {
-        return;
-    }
-    
-    peer.conn.ready(
-        function(  ) {
-            dVideo.signal.offer( peer );
-        }
-    );
-
-};
-
-
-dVideo.SignalChannel.prototype.on_open = function( event ) {};
-
-dVideo.SignalChannel.prototype.on_end = function( event ) {};
-
-
-/**
- * Handle an offer
- * 
- * @method on_offer
- * @param event {Object} Event data
- */
-dVideo.SignalChannel.prototype.on_offer = function( event ) {
-    
-    if( event.sns[0] != '@' )
-        return;
-    
-    if( !phone.call )
-        return;
-    
-    var call = phone.call;
-    var pns = event.param[0];
-    var user = event.param[1];
-    var target = event.param[2];
-    var offer = new dVideo.RTC.SessionDescription( JSON.parse( event.param.slice(3).join(',') ) );
-    
-    if( target.toLowerCase() != client.settings.username.toLowerCase() )
-        return;
-    
-    // Away or ignored
-    if( client.ui.umuted.indexOf( user.toLowerCase() ) != -1 ) {
-        dVideo.signal.reject( user, 'You have been blocked' );
-        return;
-    }
-    
-    if( client.away.on ) {
-        dVideo.signal.reject( user, 'Away, reason: ' + client.away.reason );
-        return;
-    }
-    
-    var peer = call.peer( user );
-    
-    if( !peer ) {
-        if( !call.group )
-            return;
-        
-        peer = call.new_peer( pns, user );
-    }
-    
-    peer.conn.ready(
-        function(  ) {
-            dVideo.signal.answer( peer );
-            console.log('new peer',peer.user);
-        },
-        offer
-    );
-
-};
-
-/**
- * Handle an answer
- * 
- * @method on_answer
- * @param event {Object} Event data
- */
-dVideo.SignalChannel.prototype.on_answer = function( event ) {
-    
-    if( event.sns[0] != '@' )
-        return;
-    
-    if( !phone.call )
-        return;
-    
-    var call = phone.call;
-    var pns = event.param[0];
-    var user = event.param[1];
-    var target = event.param[2];
-    var offer = new dVideo.RTC.SessionDescription( JSON.parse( event.param.slice(3).join(',') ) );
-    
-    if( target.toLowerCase() != client.settings.username.toLowerCase() )
-        return;
-    
-    var peer = call.peer( user );
-    
-    if( !peer )
-        return;
-    
-    peer.conn.open(
-        function(  ) {
-            console.log('> connected to new peer ' + peer.user);
-        },
-        offer
-    );
-
-};
-
-
-/**
- * Handle a candidate
- * 
- * @method on_candidate
- * @param event {Object} Event data
- */
-dVideo.SignalChannel.prototype.on_candidate = function( event ) {
-    
-    if( event.sns[0] != '@' )
-        return;
-    
-    if( !phone.call )
-        return;
-    
-    var call = phone.call;
-    var pns = event.param[0];
-    var user = event.param[1];
-    var target = event.param[2];
-    var candidate = new dVideo.RTC.SessionDescription( JSON.parse( event.param.slice(3).join(',') ) );
-    
-    if( target.toLowerCase() != client.settings.username.toLowerCase() )
-        return;
-    
-    var peer = call.peer( user );
-    
-    if( !peer )
-        return;
-    
-    peer.conn.candidate( candidate );
-
-};
-
-
-/**
- * Handle a close command
- *
- * @method on_close
- * @param event {Object} Event data
- */
-dVideo.SignalChannel.prototype.on_close = function( event ) {};

@@ -4,9 +4,9 @@
  * @module dVideo
  */
 var dVideo = {};
-dVideo.VERSION = '0.0.2';
+dVideo.VERSION = '0.0.3';
 dVideo.STATE = 'alpha';
-dVideo.REVISION = '0.0.2';
+dVideo.REVISION = '0.0.3';
 
 
 /**

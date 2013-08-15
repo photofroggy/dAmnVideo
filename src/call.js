@@ -27,19 +27,11 @@ dVideo.Phone.Call = function( phone, bds, ns, pns, user ) {
     
     this.dans = phone.client.deform_ns( this.ans );
     
-    dVideo.create_signaling_channel( this.phone.client, bds, pns, ns );
+    this.signal = new dVideo.SignalChannel( this.phone.client, bds, pns, ns );
     
-    dVideo.getUserMedia(
-        { video: true, audio: true },
-        function( stream ) {
-            dVideo.phone.url = URL.createObjectURL( stream );
-            dVideo.phone.stream = stream;
-            console.log( 'got stream' );
-        },
-        function( err ) {
-            console.log( err );
-        }
-    );
+    if( this.phone.stream == null ) {
+        this.phone.get_media();
+    }
 
 };
 

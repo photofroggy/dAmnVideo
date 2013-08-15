@@ -1,8 +1,8 @@
 
 var dVideo = {};
-dVideo.VERSION = '0.0.2';
+dVideo.VERSION = '0.0.3';
 dVideo.STATE = 'alpha';
-dVideo.REVISION = '0.0.2';
+dVideo.REVISION = '0.0.3';
 dVideo.bots = [ 'botdom', 'damnphone' ];
 dVideo.peer_options = {
     iceServers: [
@@ -188,18 +188,10 @@ dVideo.Phone.Call = function( phone, bds, ns, pns, user ) {
     this.group = dVideo.bots.indexOf( this.ns.substr( 1 ) ) != -1;
     this.user = user || this.spns[0].substr(1);
     this.dans = phone.client.deform_ns( this.ans );
-    dVideo.create_signaling_channel( this.phone.client, bds, pns, ns );
-    dVideo.getUserMedia(
-        { video: true, audio: true },
-        function( stream ) {
-            dVideo.phone.url = URL.createObjectURL( stream );
-            dVideo.phone.stream = stream;
-            console.log( 'got stream' );
-        },
-        function( err ) {
-            console.log( err );
-        }
-    );
+    this.signal = new dVideo.SignalChannel( this.phone.client, bds, pns, ns );
+    if( this.phone.stream == null ) {
+        this.phone.get_media();
+    }
 };
 dVideo.Phone.Call.prototype.close = function(  ) {
     for( var p in this.peers ) {
@@ -235,31 +227,41 @@ dVideo.SignalChannel = function( client, bds, pns, ns ) {
     this.ns = ns;
     this.client = client;
 };
+dVideo.SignalChannel.prototype.command = function(  ) {
+    var args = Array.prototype.slice.call(arguments);
+    var command = args.shift();
+    ',' + args[i];
+    }
+    this.client.npmsg( this.bds, 'BDS:PEER:' + command + ':' + arg );
+};
 dVideo.SignalChannel.prototype.request = function(  ) {
-    this.client.npmsg( this.bds, 'BDS:PEER:REQUEST:' + this.user + ',' + this.pns + ',' + this.nse );
+    this.command( 'REQUEST', this.user, this.ns );
 };
 dVideo.SignalChannel.prototype.accept = function( auser ) {
-    this.client.npmsg( this.bds, 'BDS:PEER:ACCEPT:' + this.pns + ',' + auser + this.nse );
+    this.command( 'ACCEPT', auser, this.nse );
 };
 dVideo.SignalChannel.prototype.offer = function( peer ) {
-    this.client.npmsg( this.bds, 'BDS:PEER:OFFER:' + this.pns + ',' + this.user + ',' + peer.user + ',' + JSON.stringify( peer.conn.offer ) );
+    this.command( 'OFFER', this.user, peer.user, JSON.stringify( peer.conn.offer ) );
 };
 dVideo.SignalChannel.prototype.answer = function( peer ) {
-    this.client.npmsg( this.bds, 'BDS:PEER:ANSWER:' + this.pns + ',' + this.user + ',' + peer.user + ',' + JSON.stringify( peer.conn.offer ) );
+    this.command( 'ANSWER', this.user, peer.user, JSON.stringify( peer.conn.offer ) );
 };
 dVideo.SignalChannel.prototype.candidate = function( peer, candidate ) {
-    this.client.npmsg( this.bds, 'BDS:PEER:CANDIDATE:' + this.pns + ',' + this.user + ',' + peer.user + ',' + JSON.stringify( candidate ) );
+    this.command( 'CANDIDATE', this.user, peer.user, JSON.stringify( candidate ) );
 };
 dVideo.SignalChannel.prototype.reject = function( ruser, reason ) {
-    reason = reason ? ',' + reason : '';
-    this.client.npmsg( this.bds, 'BDS:PEER:REJECT:' + this.pns + ',' + ruser + reason );
+    this.command( 'REJECT', ruser, reason );
 };
 dVideo.SignalChannel.prototype.close = function( cuser ) {
-    this.client.npmsg( this.bds, 'BDS:PEER:CLOSE:' + this.pns + ',' + ( cuser || this.user ) );
+    this.command( 'CLOSE', ( cuser || this.user ) );
 };
 dVideo.SignalChannel.prototype.list = function( channel ) {
     channel = channel ? ':' + channel : '';
     this.client.npmsg( this.bds, 'BDS:PEER:LIST' + channel );
+};
+dVideo.SignalHandler = function( phone, client ) {
+    this.phone = phone;
+    this.client = client;
 };
 '@' )
         return;
@@ -301,9 +303,9 @@ dVideo.SignalChannel.prototype.list = function( channel ) {
         }
     );
 };
-dVideo.SignalChannel.prototype.on_open = function( event ) {};
-dVideo.SignalChannel.prototype.on_end = function( event ) {};
-dVideo.SignalChannel.prototype.on_offer = function( event ) {
+dVideo.SignalHandler.prototype.open = function( event ) {};
+dVideo.SignalHandler.prototype.end = function( event ) {};
+dVideo.SignalHandler.prototype.offer = function( event ) {
     if( event.sns[0] != '@' )
         return;
     if( !phone.call )
@@ -336,7 +338,7 @@ dVideo.SignalChannel.prototype.on_offer = function( event ) {
         offer
     );
 };
-dVideo.SignalChannel.prototype.on_answer = function( event ) {
+dVideo.SignalHandler.prototype.answer = function( event ) {
     if( event.sns[0] != '@' )
         return;
     if( !phone.call )
@@ -358,7 +360,7 @@ dVideo.SignalChannel.prototype.on_answer = function( event ) {
         offer
     );
 };
-dVideo.SignalChannel.prototype.on_candidate = function( event ) {
+dVideo.SignalHandler.prototype.candidate = function( event ) {
     if( event.sns[0] != '@' )
         return;
     if( !phone.call )
@@ -375,7 +377,7 @@ dVideo.SignalChannel.prototype.on_candidate = function( event ) {
         return;
     peer.conn.candidate( candidate );
 };
-dVideo.SignalChannel.prototype.on_close = function( event ) {};
+dVideo.SignalHandler.prototype.close = function( event ) {};
 dVideo.peer_connection = function( user, remote ) {
     if( !dVideo.RTC.PeerConnection )
         return null;

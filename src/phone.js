@@ -31,6 +31,8 @@ dVideo.Phone = function( client ) {
     this.signal = {};
     
     this.build();
+    
+    this.signal = new dVideo.SignalHandler( this, this.cient );
 
 };
 

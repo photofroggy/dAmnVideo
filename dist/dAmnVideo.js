@@ -4,9 +4,9 @@
  * @module dVideo
  */
 var dVideo = {};
-dVideo.VERSION = '0.0.2';
+dVideo.VERSION = '0.0.3';
 dVideo.STATE = 'alpha';
-dVideo.REVISION = '0.0.2';
+dVideo.REVISION = '0.0.3';
 
 
 /**
@@ -208,6 +208,8 @@ dVideo.Phone = function( client ) {
     this.signal = {};
     
     this.build();
+    
+    this.signal = new dVideo.SignalHandler( this, this.cient );
 
 };
 
@@ -441,19 +443,11 @@ dVideo.Phone.Call = function( phone, bds, ns, pns, user ) {
     
     this.dans = phone.client.deform_ns( this.ans );
     
-    dVideo.create_signaling_channel( this.phone.client, bds, pns, ns );
+    this.signal = new dVideo.SignalChannel( this.phone.client, bds, pns, ns );
     
-    dVideo.getUserMedia(
-        { video: true, audio: true },
-        function( stream ) {
-            dVideo.phone.url = URL.createObjectURL( stream );
-            dVideo.phone.stream = stream;
-            console.log( 'got stream' );
-        },
-        function( err ) {
-            console.log( err );
-        }
-    );
+    if( this.phone.stream == null ) {
+        this.phone.get_media();
+    }
 
 };
 
@@ -540,13 +534,38 @@ dVideo.SignalChannel = function( client, bds, pns, ns ) {
 };
 
 /**
- * Request a peer connection with a particular this.user.
+ * Send a command for the current signal channel.
+ * 
+ * @method command
+ * @param command {String} Command to send
+ * @param [arg1..n] {String} Arguments
+ */
+dVideo.SignalChannel.prototype.command = function(  ) {
+
+    var args = Array.prototype.slice.call(arguments);
+    var command = args.shift();
+    
+    //args.unshift( this.pns );
+    var arg = this.pns;
+    
+    for( var i = 0; i < args.length; i++ ) {
+        if( !args[i] )
+            continue;
+        arg+= ',' + args[i];
+    }
+    
+    this.client.npmsg( this.bds, 'BDS:PEER:' + command + ':' + arg );
+
+};
+
+/**
+ * Request a peer connection with a particular user.
  * 
  * @method request
  */
 dVideo.SignalChannel.prototype.request = function(  ) {
 
-    this.client.npmsg( this.bds, 'BDS:PEER:REQUEST:' + this.user + ',' + this.pns + ',' + this.nse );
+    this.command( 'REQUEST', this.user, this.ns );
 
 };
 
@@ -554,11 +573,11 @@ dVideo.SignalChannel.prototype.request = function(  ) {
  * Accept a peer connection request.
  * 
  * @method accept
- * @param auser {String} this.user to open a peer connection with
+ * @param auser {String} user to open a peer connection with
  */
 dVideo.SignalChannel.prototype.accept = function( auser ) {
 
-    this.client.npmsg( this.bds, 'BDS:PEER:ACCEPT:' + this.pns + ',' + auser + this.nse );
+    this.command( 'ACCEPT', auser, this.nse );
 
 };
 
@@ -570,7 +589,7 @@ dVideo.SignalChannel.prototype.accept = function( auser ) {
  */
 dVideo.SignalChannel.prototype.offer = function( peer ) {
 
-    this.client.npmsg( this.bds, 'BDS:PEER:OFFER:' + this.pns + ',' + this.user + ',' + peer.user + ',' + JSON.stringify( peer.conn.offer ) );
+    this.command( 'OFFER', this.user, peer.user, JSON.stringify( peer.conn.offer ) );
 
 };
 
@@ -582,7 +601,7 @@ dVideo.SignalChannel.prototype.offer = function( peer ) {
  */
 dVideo.SignalChannel.prototype.answer = function( peer ) {
 
-    this.client.npmsg( this.bds, 'BDS:PEER:ANSWER:' + this.pns + ',' + this.user + ',' + peer.user + ',' + JSON.stringify( peer.conn.offer ) );
+    this.command( 'ANSWER', this.user, peer.user, JSON.stringify( peer.conn.offer ) );
 
 };
 
@@ -596,7 +615,7 @@ dVideo.SignalChannel.prototype.answer = function( peer ) {
  */
 dVideo.SignalChannel.prototype.candidate = function( peer, candidate ) {
 
-    this.client.npmsg( this.bds, 'BDS:PEER:CANDIDATE:' + this.pns + ',' + this.user + ',' + peer.user + ',' + JSON.stringify( candidate ) );
+    this.command( 'CANDIDATE', this.user, peer.user, JSON.stringify( candidate ) );
 
 };
 
@@ -610,8 +629,7 @@ dVideo.SignalChannel.prototype.candidate = function( peer, candidate ) {
  */
 dVideo.SignalChannel.prototype.reject = function( ruser, reason ) {
 
-    reason = reason ? ',' + reason : '';
-    this.client.npmsg( this.bds, 'BDS:PEER:REJECT:' + this.pns + ',' + ruser + reason );
+    this.command( 'REJECT', ruser, reason );
 
 };
 
@@ -624,7 +642,7 @@ dVideo.SignalChannel.prototype.reject = function( ruser, reason ) {
  */
 dVideo.SignalChannel.prototype.close = function( cuser ) {
 
-    this.client.npmsg( this.bds, 'BDS:PEER:CLOSE:' + this.pns + ',' + ( cuser || this.user ) );
+    this.command( 'CLOSE', ( cuser || this.user ) );
 
 };
 
@@ -641,6 +659,23 @@ dVideo.SignalChannel.prototype.list = function( channel ) {
     this.client.npmsg( this.bds, 'BDS:PEER:LIST' + channel );
 
 };
+/**
+ * Signal handling class.
+ *
+ * Provides a collection of event handlers which allow the extension to respond to
+ * appropriate BDS commands.
+ *
+ * @class dVideo.SignalHandler
+ * @constructor
+ * @param phone {Object} Reference to the phone object
+ * @param client {Object} Reference to a wsc instance
+ */
+dVideo.SignalHandler = function( phone, client ) {
+
+    this.phone = phone;
+    this.client = client;
+
+};
 
 
 // EVENT HANDLERS
@@ -648,10 +683,10 @@ dVideo.SignalChannel.prototype.list = function( channel ) {
 /**
  * Handle a peer request
  * 
- * @method on_request
+ * @method request
  * @param event {Object} Event data
  */
-dVideo.SignalChannel.prototype.on_request = function( event ) {
+dVideo.SignalHandler.prototype.request = function( event ) {
     
     if( event.sns[0] != '@' )
         return;
@@ -689,19 +724,19 @@ dVideo.SignalChannel.prototype.on_request = function( event ) {
  * Don't really need to do anything here
  * Unless we set a timeout for requests
  * 
- * @method on_ack
+ * @method ack
  * @param event {Object} Event data
  */
-dVideo.SignalChannel.prototype.on_ack = function( event ) {};
+dVideo.SignalHandler.prototype.ack = function( event ) {};
 
 
 /**
  * handle a reject
  * 
- * @method on_reject
+ * @method reject
  * @param event {Object} Event data
  */
-dVideo.SignalChannel.prototype.on_reject = function( event ) {
+dVideo.SignalHandler.prototype.reject = function( event ) {
     
     if( event.sns[0] != '@' )
         return;
@@ -715,10 +750,10 @@ dVideo.SignalChannel.prototype.on_reject = function( event ) {
 /**
  * Handle an accept
  *
- * @method on_accept
+ * @method accept
  * @param event {Object} Event data
  */
-dVideo.SignalChannel.prototype.on_accept = function( event ) {
+dVideo.SignalHandler.prototype.accept = function( event ) {
     
     if( event.sns[0] != '@' )
         return;
@@ -749,18 +784,18 @@ dVideo.SignalChannel.prototype.on_accept = function( event ) {
 };
 
 
-dVideo.SignalChannel.prototype.on_open = function( event ) {};
+dVideo.SignalHandler.prototype.open = function( event ) {};
 
-dVideo.SignalChannel.prototype.on_end = function( event ) {};
+dVideo.SignalHandler.prototype.end = function( event ) {};
 
 
 /**
  * Handle an offer
  * 
- * @method on_offer
+ * @method offer
  * @param event {Object} Event data
  */
-dVideo.SignalChannel.prototype.on_offer = function( event ) {
+dVideo.SignalHandler.prototype.offer = function( event ) {
     
     if( event.sns[0] != '@' )
         return;
@@ -810,10 +845,10 @@ dVideo.SignalChannel.prototype.on_offer = function( event ) {
 /**
  * Handle an answer
  * 
- * @method on_answer
+ * @method answer
  * @param event {Object} Event data
  */
-dVideo.SignalChannel.prototype.on_answer = function( event ) {
+dVideo.SignalHandler.prototype.answer = function( event ) {
     
     if( event.sns[0] != '@' )
         return;
@@ -848,10 +883,10 @@ dVideo.SignalChannel.prototype.on_answer = function( event ) {
 /**
  * Handle a candidate
  * 
- * @method on_candidate
+ * @method candidate
  * @param event {Object} Event data
  */
-dVideo.SignalChannel.prototype.on_candidate = function( event ) {
+dVideo.SignalHandler.prototype.candidate = function( event ) {
     
     if( event.sns[0] != '@' )
         return;
@@ -881,11 +916,10 @@ dVideo.SignalChannel.prototype.on_candidate = function( event ) {
 /**
  * Handle a close command
  *
- * @method on_close
+ * @method close
  * @param event {Object} Event data
  */
-dVideo.SignalChannel.prototype.on_close = function( event ) {};
-/**
+dVideo.SignalHandler.prototype.close = function( event ) {};/**
  * lol
  *
  * Make a peer connection.
