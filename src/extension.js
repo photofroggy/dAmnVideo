@@ -37,7 +37,7 @@ dVideo.extension = function( client ) {
                 var title = 'private-call';
                 var pns = ns + ':' + title;
                 
-                var call = client.bds.peer.open( ns, pns, user );
+                var call = client.bds.peer.open( ns, pns, user, dVideo.APPNAME );
                 
                 call.signal.request( dVideo.APPNAME );
             }

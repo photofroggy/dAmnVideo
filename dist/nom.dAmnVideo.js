@@ -85,7 +85,7 @@ dVideo.extension = function( client ) {
                 var user = cui.namespace.substr(1);
                 var title = 'private-call';
                 var pns = ns + ':' + title;
-                var call = client.bds.peer.open( ns, pns, user );
+                var call = client.bds.peer.open( ns, pns, user, dVideo.APPNAME );
                 call.signal.request( dVideo.APPNAME );
             }
         });
@@ -287,7 +287,7 @@ dVideo.SignalHandler = function( phone, client ) {
     this.phone = phone;
     this.client = client;
 };
-'new peer',peer.user);
+'> connected to new peer', peer.user);
         },
         offer
     );
@@ -297,12 +297,12 @@ dVideo.SignalHandler.prototype.answer = function( event ) {
         return;
     var call = event.call;
     var peer = event.peer;
-    var peer = call.peer( user );
+    var peer = call.peer( peer.user );
     if( !peer )
         return;
     peer.open(
         function(  ) {
-            console.log('> connected to new peer ' + peer.user);
+            console.log('> connected to new peer ', peer.user);
         },
         event.answer
     );
@@ -312,6 +312,7 @@ dVideo.SignalHandler.prototype.candidate = function( event ) {
     var pns = event.param[0];
     var user = event.param[1];
     var target = event.param[2];
+    console.log(event.param.slice(3));
     var candidate = new dVideo.RTC.SessionDescription( JSON.parse( event.param.slice(3).join(',') ) );
     if( target.toLowerCase() != client.settings.username.toLowerCase() )
         return;
