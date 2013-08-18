@@ -69,8 +69,8 @@ dVideo.extension = function( client ) {
         client.bind( 'peer.accept', function( event ) { dVideo.phone.signal.accept( event ); } );
         'BDS.PEER.OPEN', function( event ) { dVideo.phone.signal.open( event ); } );
         'BDS.PEER.END', function( event ) { dVideo.phone.signal.end( event ); } );
-        client.bind( 'peer.offer', function( event ) { dVideo.phone.signal.offer( event ); } );
-        client.bind( 'peer.answer', function( event ) { dVideo.phone.signal.answer( event ); } );
+        'peer.offer', function( event ) { dVideo.phone.signal.offer( event ); } );
+        'peer.answer', function( event ) { dVideo.phone.signal.answer( event ); } );
         client.bind( 'peer.close', function( event ) { dVideo.phone.signal.close( event ); } );
         client.ui.control.add_button({
             label: '',
@@ -287,7 +287,36 @@ dVideo.SignalHandler = function( phone, client ) {
     this.phone = phone;
     this.client = client;
 };
-'> connected to new peer', peer.user);
+'> got offer from',peer.user,', answering');
+        peer.onlocaldescription = function(  ) {
+            console.log('> got answer for',peer.user,', sending');
+            call.signal.answer( peer );
+        };
+        peer.create_answer();
+    };
+    '> created offer for',peer.user);
+        call.signal.offer( peer );
+    };
+    peer.onremotedescription = function(  ) {
+        '> retrieved answer and connected', peer.user);
+    };
+    peer.create_offer();
+};
+dVideo.SignalHandler.prototype.open = function( event ) {};
+dVideo.SignalHandler.prototype.end = function( event ) {};
+dVideo.SignalHandler.prototype.offer = function( event ) {
+    if( dVideo.APPNAME != event.call.app )
+        return;
+    var call = event.call;
+    var peer = event.peer;
+    var offer = event.offer;
+    peer.onremotedescription = function( ) {
+        peer.answer();
+    };
+    peer.ready(
+        function(  ) {
+            call.signal.answer( peer );
+            console.log('> connected to new peer', peer.user);
         },
         offer
     );

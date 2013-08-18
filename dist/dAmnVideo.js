@@ -142,8 +142,8 @@ dVideo.extension = function( client ) {
         client.bind( 'peer.accept', function( event ) { dVideo.phone.signal.accept( event ); } );
         //client.bind( 'BDS.PEER.OPEN', function( event ) { dVideo.phone.signal.open( event ); } );
         //client.bind( 'BDS.PEER.END', function( event ) { dVideo.phone.signal.end( event ); } );
-        client.bind( 'peer.offer', function( event ) { dVideo.phone.signal.offer( event ); } );
-        client.bind( 'peer.answer', function( event ) { dVideo.phone.signal.answer( event ); } );
+        //client.bind( 'peer.offer', function( event ) { dVideo.phone.signal.offer( event ); } );
+        //client.bind( 'peer.answer', function( event ) { dVideo.phone.signal.answer( event ); } );
         client.bind( 'peer.close', function( event ) { dVideo.phone.signal.close( event ); } );
         
         client.ui.control.add_button({
@@ -726,6 +726,17 @@ dVideo.SignalHandler.prototype.request = function( event ) {
         }
     }*/
     
+    peer.onremotedescription = function(  ) {
+        console.log( '> got offer from',peer.user,', answering');
+        
+        peer.onlocaldescription = function(  ) {
+            console.log('> got answer for',peer.user,', sending');
+            call.signal.answer( peer );
+        };
+        
+        peer.create_answer();
+    };
+    
     // TODO: Tell the user about the call.
     event.call.signal.accept( event.user, event.app );
     
@@ -773,12 +784,18 @@ dVideo.SignalHandler.prototype.accept = function( event ) {
     var peer = event.peer;
     
     // TODO: Ensure media has been retrieved before sending an offer or something
+    //       Add more checks for greater control or whatever.
+    peer.onlocaldescription = function(  ) {
+        console.log('> created offer for',peer.user);
+        call.signal.offer( peer );
+    };
     
-    peer.ready(
-        function(  ) {
-            call.signal.offer( peer );
-        }
-    );
+    peer.onremotedescription = function(  ) {
+        // We have our answer here, so everything should be fine and dandy.
+        console.log('> retrieved answer and connected', peer.user);
+    };
+    
+    peer.create_offer();
 
 };
 
@@ -815,10 +832,9 @@ dVideo.SignalHandler.prototype.offer = function( event ) {
         return;
     }*/
     
-    var peer = call.peer( peer.user );
-    
-    if( !peer )
-        peer = call.new_peer( peer.user );
+    peer.onremotedescription = function( ) {
+        peer.answer();
+    };
     
     peer.ready(
         function(  ) {

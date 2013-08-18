@@ -17,8 +17,8 @@ dVideo.extension = function( client ) {
         client.bind( 'peer.accept', function( event ) { dVideo.phone.signal.accept( event ); } );
         //client.bind( 'BDS.PEER.OPEN', function( event ) { dVideo.phone.signal.open( event ); } );
         //client.bind( 'BDS.PEER.END', function( event ) { dVideo.phone.signal.end( event ); } );
-        client.bind( 'peer.offer', function( event ) { dVideo.phone.signal.offer( event ); } );
-        client.bind( 'peer.answer', function( event ) { dVideo.phone.signal.answer( event ); } );
+        //client.bind( 'peer.offer', function( event ) { dVideo.phone.signal.offer( event ); } );
+        //client.bind( 'peer.answer', function( event ) { dVideo.phone.signal.answer( event ); } );
         client.bind( 'peer.close', function( event ) { dVideo.phone.signal.close( event ); } );
         
         client.ui.control.add_button({
