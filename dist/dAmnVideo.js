@@ -162,9 +162,9 @@ dVideo.extension = function( client ) {
                 var title = 'private-call';
                 var pns = ns + ':' + title;
                 
-                var call = client.bds.peer.open( ns, pns, user, dVideo.APPNAME );
+                var call = client.bds.peer.open( ns, pns, user );
                 
-                call.signal.request();
+                call.signal.request( dVideo.APPNAME );
             }
         });
         
@@ -703,8 +703,9 @@ dVideo.SignalHandler.prototype.request = function( event ) {
     if( dVideo.APPNAME != event.call.app )
         return;
     
-    var user = event.param[0];
-    var pns = event.param[1];
+    var call = event.call;
+    var peer = event.peer;
+    
     /*
     // Away or ignored
     if( this.client.ui.umuted.indexOf( user.toLowerCase() ) != -1 ) {
@@ -726,7 +727,7 @@ dVideo.SignalHandler.prototype.request = function( event ) {
     }*/
     
     // TODO: Tell the user about the call.
-    event.call.signal.accept();
+    event.call.signal.accept( event.user, event.app );
     
 
 },

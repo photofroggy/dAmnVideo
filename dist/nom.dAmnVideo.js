@@ -85,8 +85,8 @@ dVideo.extension = function( client ) {
                 var user = cui.namespace.substr(1);
                 var title = 'private-call';
                 var pns = ns + ':' + title;
-                var call = client.bds.peer.open( ns, pns, user, dVideo.APPNAME );
-                call.signal.request();
+                var call = client.bds.peer.open( ns, pns, user );
+                call.signal.request( dVideo.APPNAME );
             }
         });
     };
