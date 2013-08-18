@@ -287,7 +287,9 @@ dVideo.SignalHandler = function( phone, client ) {
     this.phone = phone;
     this.client = client;
 };
-'> got offer from',peer.user,', answering');
+'requested',peer.pc.signalingState);
+    peer.onremotedescription = function(  ) {
+        console.log( '> got offer from',peer.user,', answering');
         peer.onlocaldescription = function(  ) {
             console.log('> got answer for',peer.user,', sending');
             call.signal.answer( peer );

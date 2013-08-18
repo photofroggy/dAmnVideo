@@ -725,10 +725,10 @@ dVideo.SignalHandler.prototype.request = function( event ) {
             return false;
         }
     }*/
-    
+    console.log('requested',peer.pc.signalingState);
     peer.onremotedescription = function(  ) {
         console.log( '> got offer from',peer.user,', answering');
-        
+            
         peer.onlocaldescription = function(  ) {
             console.log('> got answer for',peer.user,', sending');
             call.signal.answer( peer );
