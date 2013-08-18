@@ -53,7 +53,7 @@ dVideo.SignalChannel.prototype.command = function(  ) {
  */
 dVideo.SignalChannel.prototype.request = function(  ) {
 
-    this.command( 'REQUEST', this.user, this.ns );
+    this.command( 'REQUEST', this.user, 'webcam' );
 
 };
 

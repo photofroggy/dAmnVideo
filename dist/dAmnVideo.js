@@ -7,6 +7,7 @@ var dVideo = {};
 dVideo.VERSION = '0.0.3';
 dVideo.STATE = 'alpha';
 dVideo.REVISION = '0.0.3';
+dVideo.APPNAME = 'dAmnVideo 0';
 
 
 /**
@@ -135,15 +136,15 @@ dVideo.extension = function( client ) {
         dVideo.create_phone( client );
         
         // Event bindings
-        client.bind( 'BDS.PEER.REQUEST', function( event ) { dVideo.phone.signal.request( event ); } );
-        client.bind( 'BDS.PEER.ACK', function( event ) { dVideo.phone.signal.ack( event ); } );
-        client.bind( 'BDS.PEER.REJECT', function( event ) { dVideo.phone.signal.reject( event ); } );
-        client.bind( 'BDS.PEER.ACCEPT', function( event ) { dVideo.phone.signal.accept( event ); } );
-        client.bind( 'BDS.PEER.OPEN', function( event ) { dVideo.phone.signal.open( event ); } );
-        client.bind( 'BDS.PEER.END', function( event ) { dVideo.phone.signal.end( event ); } );
-        client.bind( 'BDS.PEER.OFFER', function( event ) { dVideo.phone.signal.offer( event ); } );
-        client.bind( 'BDS.PEER.ANSWER', function( event ) { dVideo.phone.signal.answer( event ); } );
-        client.bind( 'BDS.PEER.CLOSE', function( event ) { dVideo.phone.signal.close( event ); } );
+        client.bind( 'peer.request', function( event ) { dVideo.phone.signal.request( event ); } );
+        //client.bind( 'BDS.PEER.ACK', function( event ) { dVideo.phone.signal.ack( event ); } );
+        //client.bind( 'BDS.PEER.REJECT', function( event ) { dVideo.phone.signal.reject( event ); } );
+        client.bind( 'peer.accept', function( event ) { dVideo.phone.signal.accept( event ); } );
+        //client.bind( 'BDS.PEER.OPEN', function( event ) { dVideo.phone.signal.open( event ); } );
+        //client.bind( 'BDS.PEER.END', function( event ) { dVideo.phone.signal.end( event ); } );
+        client.bind( 'peer.offer', function( event ) { dVideo.phone.signal.offer( event ); } );
+        client.bind( 'peer.answer', function( event ) { dVideo.phone.signal.answer( event ); } );
+        client.bind( 'peer.close', function( event ) { dVideo.phone.signal.close( event ); } );
         
         client.ui.control.add_button({
             label: '',
@@ -151,8 +152,19 @@ dVideo.extension = function( client ) {
             title: 'Start a video call.',
             href: '#call',
             handler: function(  ) { 
-                dVideo.create_phone( client );
-                //dVideo.phone.something();
+                var cui = client.ui.chatbook.current;
+                
+                if( cui.namespace[0] != '@' )
+                    return;
+                
+                var ns = cui.raw;
+                var user = cui.namespace.substr(1);
+                var title = 'private-call';
+                var pns = ns + ':' + title;
+                
+                var call = client.bds.peer.open( ns, pns, user, dVideo.APPNAME );
+                
+                call.signal.request();
             }
         });
         
@@ -565,7 +577,7 @@ dVideo.SignalChannel.prototype.command = function(  ) {
  */
 dVideo.SignalChannel.prototype.request = function(  ) {
 
-    this.command( 'REQUEST', this.user, this.ns );
+    this.command( 'REQUEST', this.user, 'webcam' );
 
 };
 
@@ -688,34 +700,34 @@ dVideo.SignalHandler = function( phone, client ) {
  */
 dVideo.SignalHandler.prototype.request = function( event ) {
     
-    if( event.sns[0] != '@' )
+    if( dVideo.APPNAME != event.call.app )
         return;
     
     var user = event.param[0];
     var pns = event.param[1];
-    
+    /*
     // Away or ignored
     if( this.client.ui.umuted.indexOf( user.toLowerCase() ) != -1 ) {
-        this.client.npmsg(event.ns, 'BDS:PEER:REJECT:' + pns + ',' + user + ',You have been blocked');
+        event.call.signal.reject( user, 'You have been blocked' );
         return false;
     }
-    
+    console.log('bitch');
     if( this.client.away.on ) {
-        this.client.npmsg(event.ns, 'BDS:PEER:REJECT:'+pns+','+user+',Away; ' + client.away.reason);
+        event.call.signal.reject( user, 'Away; ' + client.away.reason );
         return false;
     }
-    
+    */
+    /*
     if( phone.call != null ) {
         if( !phone.call.group ) {
             this.client.npmsg( event.ns, 'BDS:PEER:REJECT:' + pns + ',' + user + ',Already in a call' );
             return false;
         }
-    }
+    }*/
     
-    this.client.npmsg(event.ns, 'BDS:PEER:ACK:' + pns + ',' + user);
+    // TODO: Tell the user about the call.
+    event.call.signal.accept();
     
-    // Tell the user about the call.
-    return true;
 
 },
 
@@ -737,10 +749,7 @@ dVideo.SignalHandler.prototype.ack = function( event ) {};
  * @param event {Object} Event data
  */
 dVideo.SignalHandler.prototype.reject = function( event ) {
-    
-    if( event.sns[0] != '@' )
-        return;
-    
+
     // dVideo.phone.call.close();
     // dVideo.phone.call = null;
 
@@ -755,29 +764,17 @@ dVideo.SignalHandler.prototype.reject = function( event ) {
  */
 dVideo.SignalHandler.prototype.accept = function( event ) {
     
-    if( event.sns[0] != '@' )
+    if( dVideo.APPNAME != event.call.app )
         return;
     
-    if( !phone.call )
-        return;
+    var call = event.call;
+    var peer = event.peer;
     
-    var call = dVideo.phone.call;
-    var pns = event.param[0];
-    var user = event.param[1];
-    var chan = event.param[2] || event.ns;
+    // TODO: Ensure media has been retrieved before sending an offer or something
     
-    if( user.toLowerCase() != client.settings.username.toLowerCase() )
-        return;
-    
-    var peer = phone.call.new_peer( pns, event.user );
-    
-    if( !peer ) {
-        return;
-    }
-    
-    peer.conn.ready(
+    peer.ready(
         function(  ) {
-            dVideo.signal.offer( peer );
+            call.signal.offer( peer );
         }
     );
 
@@ -797,31 +794,23 @@ dVideo.SignalHandler.prototype.end = function( event ) {};
  */
 dVideo.SignalHandler.prototype.offer = function( event ) {
     
-    if( event.sns[0] != '@' )
+    if( dVideo.APPNAME != event.call.app )
         return;
     
-    if( !phone.call )
-        return;
-    
-    var call = phone.call;
-    var pns = event.param[0];
-    var user = event.param[1];
-    var target = event.param[2];
-    var offer = new dVideo.RTC.SessionDescription( JSON.parse( event.param.slice(3).join(',') ) );
-    
-    if( target.toLowerCase() != client.settings.username.toLowerCase() )
-        return;
-    
+    var call = event.call;
+    var peer = event.peer;
+    var offer = event.offer;
+    /*
     // Away or ignored
-    if( client.ui.umuted.indexOf( user.toLowerCase() ) != -1 ) {
-        dVideo.signal.reject( user, 'You have been blocked' );
+    if( this.client.ui.umuted.indexOf( user.toLowerCase() ) != -1 ) {
+        call.signal.reject( user, 'You have been blocked' );
         return;
     }
     
-    if( client.away.on ) {
-        dVideo.signal.reject( user, 'Away, reason: ' + client.away.reason );
+    if( this.client.away.on ) {
+        call.signal.reject( user, 'Away, reason: ' + this.client.away.reason );
         return;
-    }
+    }*/
     
     var peer = call.peer( user );
     
@@ -829,12 +818,12 @@ dVideo.SignalHandler.prototype.offer = function( event ) {
         if( !call.group )
             return;
         
-        peer = call.new_peer( pns, user );
+        peer = call.new_peer( user );
     }
     
-    peer.conn.ready(
+    peer.ready(
         function(  ) {
-            dVideo.signal.answer( peer );
+            call.signal.answer( peer );
             console.log('new peer',peer.user);
         },
         offer
@@ -850,31 +839,22 @@ dVideo.SignalHandler.prototype.offer = function( event ) {
  */
 dVideo.SignalHandler.prototype.answer = function( event ) {
     
-    if( event.sns[0] != '@' )
+    if( dVideo.APPNAME != event.call.app )
         return;
     
-    if( !phone.call )
-        return;
-    
-    var call = phone.call;
-    var pns = event.param[0];
-    var user = event.param[1];
-    var target = event.param[2];
-    var offer = new dVideo.RTC.SessionDescription( JSON.parse( event.param.slice(3).join(',') ) );
-    
-    if( target.toLowerCase() != client.settings.username.toLowerCase() )
-        return;
+    var call = event.call;
+    var peer = event.peer;
     
     var peer = call.peer( user );
     
     if( !peer )
         return;
     
-    peer.conn.open(
+    peer.open(
         function(  ) {
             console.log('> connected to new peer ' + peer.user);
         },
-        offer
+        event.answer
     );
 
 };
@@ -887,12 +867,6 @@ dVideo.SignalHandler.prototype.answer = function( event ) {
  * @param event {Object} Event data
  */
 dVideo.SignalHandler.prototype.candidate = function( event ) {
-    
-    if( event.sns[0] != '@' )
-        return;
-    
-    if( !phone.call )
-        return;
     
     var call = phone.call;
     var pns = event.param[0];
@@ -953,6 +927,8 @@ dVideo.PeerConnection = function( user, remote_offer ) {
     this.remote_offer = remote_offer || null;
     this.responding = this.remote_offer != null;
     this.streamed = false;
+    this.remote_stream = null;
+    this.stream = null;
     
     this.bindings();
     
@@ -975,10 +951,17 @@ dVideo.PeerConnection.prototype.bindings = function(  ) {
         dVideo.signal.candidate( dVideo.phone.call.peer( user ), candidate );
     };
     
+    // Do something when a remote stream arrives.
+    this.pc.onaddstream = function( event ) {
+        pc.set_remote_stream( event );
+    };
+    
     // Stub event handler
     var stub = function() {};
     this.onready = stub;
     this.onopen = stub;
+    this.onremotestream = stub;
+    this.onlocalstream = stub;
 
 };
 
@@ -1169,5 +1152,32 @@ dVideo.PeerConnection.prototype.answer_created = function( answer ) {
         function(  ) { pc.local_description_set(); },
         function( err ) { pc.onerror( err ); }
     );
+
+};
+
+/**
+ * Do something with the remote stream when it arrives.
+ * 
+ * @method set_remote_stream
+ * @param event {Object} Event data
+ */
+dVideo.PeerConnection.prototype.set_remote_stream = function( event ) {
+
+    this.remote_stream = event.stream;
+    this.onremotestream();
+
+};
+
+/**
+ * Store the local media stream and add it to the peer connection.
+ * 
+ * @method set_local_stream
+ * @param stream {Object} Local media stream
+ */
+dVideo.PeerConnection.prototype.set_remote_stream = function( stream ) {
+
+    this.pc.addStream( stream );
+    this.stream = stream;
+    this.onlocalstream();
 
 };

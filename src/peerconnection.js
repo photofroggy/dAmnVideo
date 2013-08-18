@@ -32,6 +32,8 @@ dVideo.PeerConnection = function( user, remote_offer ) {
     this.remote_offer = remote_offer || null;
     this.responding = this.remote_offer != null;
     this.streamed = false;
+    this.remote_stream = null;
+    this.stream = null;
     
     this.bindings();
     
@@ -54,10 +56,17 @@ dVideo.PeerConnection.prototype.bindings = function(  ) {
         dVideo.signal.candidate( dVideo.phone.call.peer( user ), candidate );
     };
     
+    // Do something when a remote stream arrives.
+    this.pc.onaddstream = function( event ) {
+        pc.set_remote_stream( event );
+    };
+    
     // Stub event handler
     var stub = function() {};
     this.onready = stub;
     this.onopen = stub;
+    this.onremotestream = stub;
+    this.onlocalstream = stub;
 
 };
 
@@ -248,5 +257,32 @@ dVideo.PeerConnection.prototype.answer_created = function( answer ) {
         function(  ) { pc.local_description_set(); },
         function( err ) { pc.onerror( err ); }
     );
+
+};
+
+/**
+ * Do something with the remote stream when it arrives.
+ * 
+ * @method set_remote_stream
+ * @param event {Object} Event data
+ */
+dVideo.PeerConnection.prototype.set_remote_stream = function( event ) {
+
+    this.remote_stream = event.stream;
+    this.onremotestream();
+
+};
+
+/**
+ * Store the local media stream and add it to the peer connection.
+ * 
+ * @method set_local_stream
+ * @param stream {Object} Local media stream
+ */
+dVideo.PeerConnection.prototype.set_remote_stream = function( stream ) {
+
+    this.pc.addStream( stream );
+    this.stream = stream;
+    this.onlocalstream();
 
 };

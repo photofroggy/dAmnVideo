@@ -7,6 +7,7 @@ var dVideo = {};
 dVideo.VERSION = '0.0.3';
 dVideo.STATE = 'alpha';
 dVideo.REVISION = '0.0.3';
+dVideo.APPNAME = 'dAmnVideo 0';
 
 
 /**
