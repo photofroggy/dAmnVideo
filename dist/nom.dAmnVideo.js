@@ -287,16 +287,21 @@ dVideo.SignalHandler = function( phone, client ) {
     this.phone = phone;
     this.client = client;
 };
-'requested',peer.pc.signalingState);
+'> finished ice.');
+    };
+    console.log('requested',peer.pc.signalingState);
     peer.onremotedescription = function(  ) {
         console.log( '> got offer from',peer.user,', answering');
-        peer.onlocaldescription = function(  ) {
-            console.log('> got answer for',peer.user,', sending');
-            call.signal.answer( peer );
-        };
         peer.create_answer();
     };
-    '> created offer for',peer.user);
+    peer.onlocaldescription = function(  ) {
+        console.log('> got answer for',peer.user,', sending');
+        call.signal.answer( peer );
+    };
+    '> finished ice.');
+    };
+    peer.onlocaldescription = function(  ) {
+        console.log('> created offer for',peer.user);
         call.signal.offer( peer );
     };
     peer.onremotedescription = function(  ) {

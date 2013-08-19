@@ -725,16 +725,19 @@ dVideo.SignalHandler.prototype.request = function( event ) {
             return false;
         }
     }*/
+    peer.onicecompleted = function(  ) {
+        console.log('> finished ice.');
+    };
+    
     console.log('requested',peer.pc.signalingState);
     peer.onremotedescription = function(  ) {
         console.log( '> got offer from',peer.user,', answering');
-            
-        peer.onlocaldescription = function(  ) {
-            console.log('> got answer for',peer.user,', sending');
-            call.signal.answer( peer );
-        };
-        
         peer.create_answer();
+    };
+
+    peer.onlocaldescription = function(  ) {
+        console.log('> got answer for',peer.user,', sending');
+        call.signal.answer( peer );
     };
     
     // TODO: Tell the user about the call.
@@ -785,6 +788,10 @@ dVideo.SignalHandler.prototype.accept = function( event ) {
     
     // TODO: Ensure media has been retrieved before sending an offer or something
     //       Add more checks for greater control or whatever.
+    peer.onicecompleted = function(  ) {
+        console.log('> finished ice.');
+    };
+    
     peer.onlocaldescription = function(  ) {
         console.log('> created offer for',peer.user);
         call.signal.offer( peer );
