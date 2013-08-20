@@ -52,6 +52,8 @@ dVideo.extension = function( client ) {
                         done();
                     }, done
                 );
+                
+                dVideo.phone.call = call;
             }
         });
         

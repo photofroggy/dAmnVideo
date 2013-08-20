@@ -122,15 +122,15 @@ dVideo.Phone.prototype.dial = function( bds, pns, ns, host ) {
     dVideo.signal.request(  );
     return this.call;
 };
-dVideo.Phone.prototype.incoming = function( pns, user, event ) {
+dVideo.Phone.prototype.incoming = function( call, peer ) {
     var client = this.client;
     if( this.call == null ) {
         var pnotice = client.ui.pager.notice({
-            'ref': 'call-' + user,
-            'icon': '<img src="' + wsc.dAmn.avatar.src(user,
-                client.channel(event.ns).info.members[user].usericon) + '" />',
-            'heading': user + ' calling...',
-            'content': user + ' is calling you.',
+            'ref': 'call-' + peer.user,
+            'icon': '<img src="' + wsc.dAmn.avatar.src(peer.user,
+                client.channel(call.ns).info.members[peer.user].usericon) + '" />',
+            'heading': peer.user + ' calling...',
+            'content': peer.user + ' is calling you.',
             'buttons': {
                 'answer': {
                     'ref': 'answer',
@@ -139,7 +139,7 @@ dVideo.Phone.prototype.incoming = function( pns, user, event ) {
                     'title': 'Answer the call',
                     'click': function(  ) {
                         client.ui.pager.remove_notice( pnotice );
-                        dVideo.phone.answer( event.ns, event.param[2] || event.ns, pns, user );
+                        dVideo.phone.answer( call, peer );
                         return false;
                     }
                 },
@@ -149,7 +149,7 @@ dVideo.Phone.prototype.incoming = function( pns, user, event ) {
                     'label': 'Reject',
                     'title': 'Reject the call',
                     'click': function(  ) {
-                        client.npmsg(event.ns, 'BDS:PEER:REJECT:'+pns+',' + user);
+                        call.signal.reject( peer.user );
                         client.ui.pager.remove_notice( pnotice );
                         return false;
                     }
@@ -157,36 +157,29 @@ dVideo.Phone.prototype.incoming = function( pns, user, event ) {
             }
         }, true );
         pnotice.onclose = function(  ) {
-            client.npmsg( event.ns, 'BDS:PEER:REJECT:' + event.user );
+            call.signal.reject( peer.user );
         };
         return;
     }
-    var peer = this.call.new_peer( pns, user );
-    var call = this.call;
-    if( !peer ) {
-        dVideo.signal.reject( user, 'Permission denied' );
+    if( !this.call.group )
         return;
-    }
-    if( !this.call.group ) {
-        dVideo.signal.accept( user );
-        return;
-    }
-    peer.conn.ready(
-        function(  ) {
-            dVideo.signal.offer( peer );
-        }
-    );
+    '> finished ice.');
+    };
+    peer.onlocaldescription = function(  ) {
+        console.log('> created offer for',peer.user);
+        call.signal.offer( peer );
+    };
+    peer.onremotedescription = function(  ) {
+        '> retrieved answer and connected', peer.user);
+        peer.persist();
+    };
+    peer.create_offer();
 };
-dVideo.Phone.prototype.answer = function( bds, ns, pns, user ) {
-    this.call = new dVideo.Phone.Call( this, bds, ns, pns, user );
-    var peer = this.call.new_peer( pns, user );
-    if( !peer ) {
-        dVideo.signal.reject( user, 'Permission denied' );
-        this.call.close();
-        this.call = null;
+dVideo.Phone.prototype.answer = function( call, peer ) {
+    this.call = call;
+    if( call.group )
         return;
-    }
-    dVideo.signal.accept( user );
+    call.signal.accept( peer.user );
 };
 dVideo.Phone.Call = function( phone, bds, ns, pns, user ) {
     this.phone = phone;
@@ -276,7 +269,21 @@ dVideo.SignalHandler = function( phone, client ) {
     this.phone = phone;
     this.client = client;
 };
-'> finished ice.');
+'You have been blocked' );
+        return false;
+    }
+    if( this.client.away.on ) {
+        call.signal.reject( peer.user, 'Away; ' + client.away.reason );
+        return false;
+    }
+    if( phone.call != null ) {
+        if( phone.call != call || !call.group ) {
+            call.signal.reject( peer.user, 'Already in a call' );
+            return false;
+        }
+    }
+    peer.onicecompleted = function(  ) {
+        console.log('> finished ice.');
     };
     console.log('requested',peer.pc.signalingState);
     peer.onremotedescription = function(  ) {

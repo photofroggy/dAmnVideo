@@ -32,7 +32,7 @@ dVideo.Phone = function( client ) {
     
     this.build();
     
-    this.signal = new dVideo.SignalHandler( this, this.cient );
+    this.signal = new dVideo.SignalHandler( this, this.client );
 
 };
 
@@ -117,22 +117,21 @@ dVideo.Phone.prototype.dial = function( bds, pns, ns, host ) {
  * Receive an incoming peer connection.
  * 
  * @method incoming
- * @param pns {String} Peer connection namespace
- * @param user {String} User of the connection
- * @param event {Object} Event data
+ * @param call {Object} Incoming call
+ * @param peer {Object} Peer making the request
  */
-dVideo.Phone.prototype.incoming = function( pns, user, event ) {
+dVideo.Phone.prototype.incoming = function( call, peer ) {
 
     var client = this.client;
     
     if( this.call == null ) {
         
         var pnotice = client.ui.pager.notice({
-            'ref': 'call-' + user,
-            'icon': '<img src="' + wsc.dAmn.avatar.src(user,
-                client.channel(event.ns).info.members[user].usericon) + '" />',
-            'heading': user + ' calling...',
-            'content': user + ' is calling you.',
+            'ref': 'call-' + peer.user,
+            'icon': '<img src="' + wsc.dAmn.avatar.src(peer.user,
+                client.channel(call.ns).info.members[peer.user].usericon) + '" />',
+            'heading': peer.user + ' calling...',
+            'content': peer.user + ' is calling you.',
             'buttons': {
                 'answer': {
                     'ref': 'answer',
@@ -141,7 +140,7 @@ dVideo.Phone.prototype.incoming = function( pns, user, event ) {
                     'title': 'Answer the call',
                     'click': function(  ) {
                         client.ui.pager.remove_notice( pnotice );
-                        dVideo.phone.answer( event.ns, event.param[2] || event.ns, pns, user );
+                        dVideo.phone.answer( call, peer );
                         return false;
                     }
                 },
@@ -151,7 +150,7 @@ dVideo.Phone.prototype.incoming = function( pns, user, event ) {
                     'label': 'Reject',
                     'title': 'Reject the call',
                     'click': function(  ) {
-                        client.npmsg(event.ns, 'BDS:PEER:REJECT:'+pns+',' + user);
+                        call.signal.reject( peer.user );
                         client.ui.pager.remove_notice( pnotice );
                         return false;
                     }
@@ -160,19 +159,11 @@ dVideo.Phone.prototype.incoming = function( pns, user, event ) {
         }, true );
         
         pnotice.onclose = function(  ) {
-            client.npmsg( event.ns, 'BDS:PEER:REJECT:' + event.user );
+            call.signal.reject( peer.user );
         };
     
         return;
     
-    }
-    
-    var peer = this.call.new_peer( pns, user );
-    var call = this.call;
-    
-    if( !peer ) {
-        dVideo.signal.reject( user, 'Permission denied' );
-        return;
     }
     
     /**
@@ -200,40 +191,42 @@ dVideo.Phone.prototype.incoming = function( pns, user, event ) {
      *  Request is not needed on this side of things. Make it so.
      */
     
-    if( !this.call.group ) {
-        dVideo.signal.accept( user );
+    if( !this.call.group )
         return;
-    }
     
-    peer.conn.ready(
-        function(  ) {
-            dVideo.signal.offer( peer );
-        }
-    );
+    // Set event callbacks.
+    peer.onicecompleted = function(  ) {
+        console.log('> finished ice.');
+    };
+    
+    peer.onlocaldescription = function(  ) {
+        console.log('> created offer for',peer.user);
+        call.signal.offer( peer );
+    };
+    
+    peer.onremotedescription = function(  ) {
+        // We have our answer here, so everything should be fine and dandy.
+        console.log('> retrieved answer and connected', peer.user);
+        peer.persist();
+    };
+    
+    peer.create_offer();
 
 };
 
 /**
  * Answer a call.
  * @method answer
- * @param bds {String} dAmn channel being used for bds messages
- * @param ns {String} dAmn channel associated with the call
- * @param pns {String} Peer namespace for the call
- * @param user {String} User for the call
+ * @param call {Object} Incoming call
+ * @param peer {Object} Peer making the request
  */
-dVideo.Phone.prototype.answer = function( bds, ns, pns, user ) {
+dVideo.Phone.prototype.answer = function( call, peer ) {
 
-    this.call = new dVideo.Phone.Call( this, bds, ns, pns, user );
+    this.call = call;
     
-    var peer = this.call.new_peer( pns, user );
-    
-    if( !peer ) {
-        dVideo.signal.reject( user, 'Permission denied' );
-        this.call.close();
-        this.call = null;
+    if( call.group )
         return;
-    }
     
-    dVideo.signal.accept( user );
+    call.signal.accept( peer.user );
 
 };

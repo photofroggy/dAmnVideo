@@ -32,26 +32,26 @@ dVideo.SignalHandler.prototype.request = function( event ) {
     
     var call = event.call;
     var peer = event.peer;
+    var phone = dVideo.phone;
     
-    /*
     // Away or ignored
-    if( this.client.ui.umuted.indexOf( user.toLowerCase() ) != -1 ) {
-        event.call.signal.reject( user, 'You have been blocked' );
+    if( this.client.ui.umuted.indexOf( peer.user.toLowerCase() ) != -1 ) {
+        call.signal.reject( peer.user, 'You have been blocked' );
         return false;
     }
-    console.log('bitch');
+    
     if( this.client.away.on ) {
-        event.call.signal.reject( user, 'Away; ' + client.away.reason );
+        call.signal.reject( peer.user, 'Away; ' + client.away.reason );
         return false;
     }
-    */
-    /*
+    
     if( phone.call != null ) {
-        if( !phone.call.group ) {
-            this.client.npmsg( event.ns, 'BDS:PEER:REJECT:' + pns + ',' + user + ',Already in a call' );
+        if( phone.call != call || !call.group ) {
+            call.signal.reject( peer.user, 'Already in a call' );
             return false;
         }
-    }*/
+    }
+    
     peer.onicecompleted = function(  ) {
         console.log('> finished ice.');
     };
@@ -68,7 +68,7 @@ dVideo.SignalHandler.prototype.request = function( event ) {
     };
     
     // TODO: Tell the user about the call.
-    event.call.signal.accept( event.user, event.app );
+    phone.incoming( call, peer );
     
 
 },
