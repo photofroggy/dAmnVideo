@@ -12,13 +12,9 @@
             "mini": "dist/dAmnVideo.min.js",
             "files": [
                 "src/base.js",
-                "src/webrtc.js",
                 "src/extension.js",
                 "src/phone.js",
-                "src/call.js",
-                "src/signalchannel.js",
-                "src/signalhandler.js",
-                "src/peerconnection.js"
+                "src/signalhandler.js"
             ]
         },
         {

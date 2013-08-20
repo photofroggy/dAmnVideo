@@ -1,8 +1,8 @@
 
 var dVideo = {};
-dVideo.VERSION = '0.0.3';
+dVideo.VERSION = '0.1.4';
 dVideo.STATE = 'alpha';
-dVideo.REVISION = '0.0.3';
+dVideo.REVISION = '0.1.4';
 dVideo.APPNAME = 'dAmnVideo 0';
 dVideo.bots = [ 'botdom', 'damnphone' ];
 dVideo.peer_options = {
@@ -24,39 +24,6 @@ dVideo.remote._empty = {
 dVideo.chan = {};
 dVideo.chan.group = false;
 dVideo.chan.calls = [];
-dVideo.RTC = {
-    PeerConnection: null,
-    SessionDescription: null,
-    IceCandidate: null,
-}
-dVideo._gum = function() {};
-dVideo.getUserMedia = function( options, success, error ) {
-    return dVideo._gum( options, success, error );
-};
-if( window.mozRTCPeerConnection ) {
-    dVideo.RTC.PeerConnection = mozRTCPeerConnection;
-    dVideo.RTC.SessionDescription = mozRTCSessionDescription;
-    dVideo.RTC.IceCandidate = mozRTCIceCandidate;
-    dVideo._gum = function( options, success, error ) {
-        return navigator.mozGetUserMedia( options, success, error );
-    };
-}
-if( window.webkitRTCPeerConnection ) {
-    dVideo.RTC.PeerConnection = webkitRTCPeerConnection;
-    dVideo._gum = function( options, success, error ) {
-        return navigator.webkitGetUserMedia( options, success, error );
-    };
-}
-if( window.RTCPeerConnection ) {
-    dVideo.RTC.PeerConnection = RTCPeerConnection;
-    dVideo._gum = function( options, success, error ) {
-        return navigator.getUserMedia( options, success, error );
-    };
-}
-if( window.RTCSessionDescription ) {
-    dVideo.RTC.SessionDescription = RTCSessionDescription;
-    dVideo.RTC.IceCandidate = RTCIceCandidate;
-}
 dVideo.extension = function( client ) {
     if( !dVideo.RTC.PeerConnection )
         return;
@@ -185,90 +152,7 @@ dVideo.Phone.prototype.answer = function( call, peer ) {
     };
     dVideo.phone.get_media(
         function(  ) {
-            '';
-    this.peers = {};
-    this.spns = this.pns.split('-');
-    this.ans = this.spns.shift();
-    this.rns = this.spns.join(' ');
-    this.group = dVideo.bots.indexOf( this.ns.substr( 1 ) ) != -1;
-    this.user = user || this.spns[0].substr(1);
-    this.dans = phone.client.deform_ns( this.ans );
-    this.signal = new dVideo.SignalChannel( this.phone.client, bds, pns, ns );
-    if( this.phone.stream == null ) {
-        this.phone.get_media();
-    }
-};
-dVideo.Phone.Call.prototype.close = function(  ) {
-    for( var p in this.peers ) {
-        if( !this.peers.hasOwnProperty( p ) )
-            continue;
-        this.peers[p].conn.close();
-    }
-};
-dVideo.Phone.Call.prototype.new_peer = function( pns, user ) {
-    if( this.pns != pns )
-        return null;
-    if( !this.group ) {
-        if( this.dans.substr(1).toLowerCase() != user.toLowerCase() )
-            return null;
-    }
-    var peer = {
-        user: user,
-        conn: dVideo.peer_connection( user ),
-        stream: null,
-        url: null
-    };
-    this.peers[user] = peer;
-    return peer;
-};
-dVideo.Phone.Call.prototype.peer = function( peer ) {
-    return this.peers[peer] || null;
-};
-dVideo.SignalChannel = function( client, bds, pns, ns ) {
-    this.user = client.settings.username;
-    this.nse = ns ? ',' + ns : '';
-    this.bds = this.bds;
-    this.pns = this.pns;
-    this.ns = ns;
-    this.client = client;
-};
-dVideo.SignalChannel.prototype.command = function(  ) {
-    var args = Array.prototype.slice.call(arguments);
-    var command = args.shift();
-    ',' + args[i];
-    }
-    this.client.npmsg( this.bds, 'BDS:PEER:' + command + ':' + arg );
-};
-dVideo.SignalChannel.prototype.request = function(  ) {
-    this.command( 'REQUEST', this.user, 'webcam' );
-};
-dVideo.SignalChannel.prototype.accept = function( auser ) {
-    this.command( 'ACCEPT', auser, this.nse );
-};
-dVideo.SignalChannel.prototype.offer = function( peer ) {
-    this.command( 'OFFER', this.user, peer.user, JSON.stringify( peer.conn.offer ) );
-};
-dVideo.SignalChannel.prototype.answer = function( peer ) {
-    this.command( 'ANSWER', this.user, peer.user, JSON.stringify( peer.conn.offer ) );
-};
-dVideo.SignalChannel.prototype.candidate = function( peer, candidate ) {
-    this.command( 'CANDIDATE', this.user, peer.user, JSON.stringify( candidate ) );
-};
-dVideo.SignalChannel.prototype.reject = function( ruser, reason ) {
-    this.command( 'REJECT', ruser, reason );
-};
-dVideo.SignalChannel.prototype.close = function( cuser ) {
-    this.command( 'CLOSE', ( cuser || this.user ) );
-};
-dVideo.SignalChannel.prototype.list = function( channel ) {
-    channel = channel ? ':' + channel : '';
-    this.client.npmsg( this.bds, 'BDS:PEER:LIST' + channel );
-};
-dVideo.SignalHandler = function( phone, client ) {
-    this.phone = phone;
-    this.client = client;
-};
-'You have been blocked' );
+            'You have been blocked' );
         return false;
     }
     if( this.client.away.on ) {
@@ -354,77 +238,3 @@ dVideo.SignalHandler.prototype.candidate = function( event ) {
     peer.conn.candidate( candidate );
 };
 dVideo.SignalHandler.prototype.close = function( event ) {};
-dVideo.peer_connection = function( user, remote ) {
-    if( !dVideo.RTC.PeerConnection )
-        return null;
-    return new dVideo.PeerConnection( user, remote );
-};
-dVideo.PeerConnection = function( user, remote_offer ) {
-    this.user = user;
-    this.pc = new dVideo.RTC.PeerConnection( dVideo.peer_options );
-    this.offer = '';
-    this.remote_offer = remote_offer || null;
-    this.responding = this.remote_offer != null;
-    this.streamed = false;
-    this.remote_stream = null;
-    this.stream = null;
-    this.bindings();
-    if( this.remote_offer )
-        this.set_remote_description( this.remote_offer );
-};
-dVideo.PeerConnection.prototype.bindings = function(  ) {
-    var pc = this;
-    var user = this.user;
-    '>> Got an error:', '"', err.message, '"', err );
-};
-dVideo.PeerConnection.prototype.candidate = function( candidate ) {
-    this.pc.addIceCandidate( candidate );
-};
-dVideo.PeerConnection.prototype.create_offer = function(  ) {
-    var pc = this;
-    this.pc.createOffer(
-        function( description ) { pc.offer_created( description ); },
-        function( err ) { pc.onerror( err ); }
-    );
-};
-dVideo.PeerConnection.prototype.offer_created = function( description ) {
-    this.offer = description;
-    var pc = this;
-    this.pc.setLocalDescription( this.offer , function(  ) { pc.local_description_set(); }, this.onerror );
-};
-dVideo.PeerConnection.prototype.set_remote_description = function( description ) {
-    this.remote_offer = description;
-    var pc = this;
-    this.pc.setRemoteDescription( this.remote_offer , function(  ) { pc.remote_description_set(); }, this.onerror );
-};
-dVideo.PeerConnection.prototype.local_description_set = function(  ) {
-    this.onready();
-};
-dVideo.PeerConnection.prototype.remote_description_set = function(  ) {
-    this.onopen();
-};
-dVideo.PeerConnection.prototype.answer = function(  ) {
-    var pc = this;
-    this.responding = true;
-    this.pc.createAnswer( 
-        function( answer ) { pc.answer_created( answer ); },
-        function( err ) { pc.onerror( err ); }
-    );
-};
-dVideo.PeerConnection.prototype.answer_created = function( answer ) {
-    this.offer = answer;
-    var pc = this;
-    this.pc.setLocalDescription( this.offer,
-        function(  ) { pc.local_description_set(); },
-        function( err ) { pc.onerror( err ); }
-    );
-};
-dVideo.PeerConnection.prototype.set_remote_stream = function( event ) {
-    this.remote_stream = event.stream;
-    this.onremotestream();
-};
-dVideo.PeerConnection.prototype.set_remote_stream = function( stream ) {
-    this.pc.addStream( stream );
-    this.stream = stream;
-    this.onlocalstream();
-};
