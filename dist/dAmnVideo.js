@@ -174,6 +174,7 @@ dVideo.extension = function( client ) {
                         // and set up a view port.
                         call.localstream = dVideo.phone.stream;
                         // TODO: set up viewport
+                        done();
                     }, done
                 );
             }
