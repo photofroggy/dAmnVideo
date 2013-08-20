@@ -25,7 +25,7 @@ dVideo.chan = {};
 dVideo.chan.group = false;
 dVideo.chan.calls = [];
 dVideo.extension = function( client ) {
-    if( !dVideo.RTC.PeerConnection )
+    if( !wsc.dAmn.BDS.Peer.RTC.PeerConnection )
         return;
     var init = function (  ) {
         client.bds.provides.push( 'PEER' );

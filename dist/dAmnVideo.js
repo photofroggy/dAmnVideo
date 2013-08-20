@@ -72,7 +72,7 @@ dVideo.chan.calls = [];
 
 dVideo.extension = function( client ) {
     
-    if( !dVideo.RTC.PeerConnection )
+    if( !wsc.dAmn.BDS.Peer.RTC.PeerConnection )
         return;
     
     var init = function (  ) {
