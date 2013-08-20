@@ -23,37 +23,23 @@ dVideo.extension = function( client ) {
         
         client.ui.control.add_button({
             label: '',
-            icon: 'camera',
+            icon: 'iphone',
             title: 'Start a video call.',
             href: '#call',
-            handler: function(  ) { 
+            handler: function(  ) {
                 var cui = client.ui.chatbook.current;
                 
-                if( cui.namespace[0] != '@' )
+                // We should do something else if it is a public channel.
+                if( cui.namespace[0] == '#' ) {
+                    // Need stuff in here...
                     return;
+                }
                 
                 var ns = cui.raw;
                 var user = cui.namespace.substr(1);
                 var title = 'private-call';
-                var pns = ns + ':' + title;
-                
-                var call = client.bds.peer.open( ns, pns, user, dVideo.APPNAME );
-                
-                var done = function(  ) {
-                    call.signal.request( );
-                };
-                
-                dVideo.phone.get_media(
-                    function(  ) {
-                        // Set as the local stream on the call
-                        // and set up a view port.
-                        call.localstream = dVideo.phone.stream;
-                        // TODO: set up viewport
-                        done();
-                    }, done
-                );
-                
-                dVideo.phone.call = call;
+                                
+                dVideo.phone.dial( ns, ns + ':' + title, cui.namespace, title, user );
             }
         });
         

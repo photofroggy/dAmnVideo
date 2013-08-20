@@ -1,3 +1,29 @@
-div.wot {
-    background-color: black;
+
+div.phone {
+    
+    &.private {
+        width: 475px;
+        float: left;
+        
+        div.viewport {
+            width: 475px;
+            height: 200px;
+                
+            div.video {
+                text-align: center;
+                height: 175px;
+                
+                video {
+                    height: 175px;
+                }
+            }
+            
+            div.label {
+                height: 50px;
+                text-align: center;
+            }
+        }
+    }
+    
 }
+

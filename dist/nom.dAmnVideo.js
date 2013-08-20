@@ -41,24 +41,30 @@ dVideo.extension = function( client ) {
         client.bind( 'peer.close', function( event ) { dVideo.phone.signal.close( event ); } );
         client.ui.control.add_button({
             label: '',
-            icon: 'camera',
+            icon: 'iphone',
             title: 'Start a video call.',
             href: '#call',
-            handler: function(  ) { 
+            handler: function(  ) {
                 var cui = client.ui.chatbook.current;
-                if( cui.namespace[0] != '@' )
-                    return;
-                var ns = cui.raw;
-                var user = cui.namespace.substr(1);
-                var title = 'private-call';
-                var pns = ns + ':' + title;
-                var call = client.bds.peer.open( ns, pns, user, dVideo.APPNAME );
-                var done = function(  ) {
-                    call.signal.request( );
-                };
-                dVideo.phone.get_media(
-                    function(  ) {
-                        '<div class="phone"></div>');
+                '#' ) {
+                    'private-call';
+                dVideo.phone.dial( ns, ns + ':' + title, cui.namespace, title, user );
+            }
+        });
+    };
+    var cmds = {
+    };
+    var handle = {
+    };
+    init();
+};
+dVideo.create_phone = function( client ) {
+    if( dVideo.phone )
+        return;
+    dVideo.phone = new dVideo.Phone( client );
+};
+dVideo.Phone = function( client ) {
+    '<div class="phone"></div>');
     this.view = this.client.ui.view.find('div.phone');
 };
 dVideo.Phone.prototype.get_media = function( success, err ) {
@@ -77,21 +83,22 @@ dVideo.Phone.prototype.get_media = function( success, err ) {
     );
 };
 dVideo.Phone.prototype.got_media = function( stream ) {
-    dVideo.phone.url = URL.createObjectURL( stream );
-    dVideo.phone.stream = stream;
+    this.url = URL.createObjectURL( stream );
+    this.stream = stream;
 };
-dVideo.Phone.prototype.dial = function( bds, pns, ns, host ) {
+dVideo.Phone.prototype.dial = function( bds, pns, ns, title, user ) {
     if( this.call != null )
         return this.call;
-    ns = ns || bds;
-    this.call = new dVideo.Phone.Call( this, bds, ns, pns, host );
-    dVideo.signal.request(  );
-    return this.call;
-};
-dVideo.Phone.prototype.incoming = function( call, peer ) {
-    var client = this.client;
-    if( this.call == null ) {
-        var pnotice = client.ui.pager.notice({
+    if( ns[0] != '@' )
+        return;
+    var call = client.bds.peer.open( bds, pns, user, dVideo.APPNAME );
+    var peer = call.new_peer( user );
+    var done = function(  ) {
+        call.signal.request( );
+    };
+    this.viewport( call, peer );
+    this.get_media(
+        function(  ) {
             'ref': 'call-' + peer.user,
             'icon': '<img src="' + wsc.dAmn.avatar.src(peer.user,
                 client.channel(call.ns).info.members[peer.user].usericon) + '" />',
@@ -150,9 +157,44 @@ dVideo.Phone.prototype.answer = function( call, peer ) {
             peer.set_local_stream( call.localstream );
         call.signal.accept( peer.user );
     };
-    dVideo.phone.get_media(
+    this.viewport( call, peer );
+    this.get_media(
         function(  ) {
-            'You have been blocked' );
+            '> sizes', width, 'x', height );
+    cui.el.l.p.after(
+        '<div class="phone private">\
+            <div class="viewport remote">\
+                <div class="video">\
+                    <video autoplay></video>\
+                </div>\
+                <div class="label">' + peer.user + '</div>\
+            </div>\
+            <div class="viewport local">\
+                <div class="video">\
+                    <video autoplay></video>\
+                </div>\
+                <div class="label">you</div>\
+            </div>\
+        </div>'
+    );
+    var pui = cui.el.m.find( 'div.phone' );
+    pui.height( height );
+    var rvid = pui.find('.viewport.remote video');
+    var lvid = pui.find('.viewport.local video');
+    if( this.url )
+        lvid[0].src = this.url;
+    call.onlocalstream = function(  ) {
+        lvid[0].src = call.localurl;
+    };
+    peer.onremotestream = function(  ) {
+        rvid[0].src = URL.createObjectURL( peer.remote_stream );
+    };
+};
+dVideo.SignalHandler = function( phone, client ) {
+    this.phone = phone;
+    this.client = client;
+};
+'You have been blocked' );
         return false;
     }
     if( this.client.away.on ) {

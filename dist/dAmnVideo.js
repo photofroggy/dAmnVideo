@@ -93,37 +93,23 @@ dVideo.extension = function( client ) {
         
         client.ui.control.add_button({
             label: '',
-            icon: 'camera',
+            icon: 'iphone',
             title: 'Start a video call.',
             href: '#call',
-            handler: function(  ) { 
+            handler: function(  ) {
                 var cui = client.ui.chatbook.current;
                 
-                if( cui.namespace[0] != '@' )
+                // We should do something else if it is a public channel.
+                if( cui.namespace[0] == '#' ) {
+                    // Need stuff in here...
                     return;
+                }
                 
                 var ns = cui.raw;
                 var user = cui.namespace.substr(1);
                 var title = 'private-call';
-                var pns = ns + ':' + title;
-                
-                var call = client.bds.peer.open( ns, pns, user, dVideo.APPNAME );
-                
-                var done = function(  ) {
-                    call.signal.request( );
-                };
-                
-                dVideo.phone.get_media(
-                    function(  ) {
-                        // Set as the local stream on the call
-                        // and set up a view port.
-                        call.localstream = dVideo.phone.stream;
-                        // TODO: set up viewport
-                        done();
-                    }, done
-                );
-                
-                dVideo.phone.call = call;
+                                
+                dVideo.phone.dial( ns, ns + ':' + title, cui.namespace, title, user );
             }
         });
         
@@ -231,8 +217,8 @@ dVideo.Phone.prototype.get_media = function( success, err ) {
  */
 dVideo.Phone.prototype.got_media = function( stream ) {
 
-    dVideo.phone.url = URL.createObjectURL( stream );
-    dVideo.phone.stream = stream;
+    this.url = URL.createObjectURL( stream );
+    this.stream = stream;
 
 };
 
@@ -242,21 +228,39 @@ dVideo.Phone.prototype.got_media = function( stream ) {
  * @method dial
  * @param bds {String} dAmn channel being used for BDS commands
  * @param pns {String} Peer namespace for the call
- * @param [ns=bds] {String} dAmn channel for the call
- * @param [host=pns.user] {String} Host of the call
+ * @param [user] {String} User for the call
  * @return {Object} Reference to the current call
  */
-dVideo.Phone.prototype.dial = function( bds, pns, ns, host ) {
+dVideo.Phone.prototype.dial = function( bds, pns, ns, title, user ) {
 
     if( this.call != null )
         return this.call;
     
-    ns = ns || bds;
+    if( ns[0] != '@' )
+        return;
+                
+    var call = client.bds.peer.open( bds, pns, user, dVideo.APPNAME );
+    var peer = call.new_peer( user );
     
-    this.call = new dVideo.Phone.Call( this, bds, ns, pns, host );
-    dVideo.signal.request(  );
+    var done = function(  ) {
+        call.signal.request( );
+    };
     
-    return this.call;
+    this.viewport( call, peer );
+    
+    this.get_media(
+        function(  ) {
+            // Set as the local stream on the call
+            // and set up a view port.
+            call.set_local_stream( dVideo.phone.stream );
+            // TODO: set up viewport
+            done();
+        }, done
+    );
+    
+    this.call = call;
+    
+    return call;
 
 };
 
@@ -381,17 +385,77 @@ dVideo.Phone.prototype.answer = function( call, peer ) {
         call.signal.accept( peer.user );
     };
     
-    dVideo.phone.get_media(
+    this.viewport( call, peer );
+    
+    this.get_media(
         function(  ) {
             // Set as the local stream on the call
             // and set up a view port.
-            call.localstream = dVideo.phone.stream;
+            call.set_local_stream( dVideo.phone.stream );
             // TODO: set up viewport
             done();
         }, done
     );
 
 };
+
+
+/**
+ * Build viewports for webcams for a private call.
+ * 
+ * @method viewport
+ */
+dVideo.Phone.prototype.viewport = function( call, peer ) {
+
+    var cui = this.client.ui.chatbook.channel( call.ns );
+    cui.ulbuf = 500;
+    cui.resize();
+    
+    // Height.
+    var height = cui.el.l.p.height();
+    var width = cui.el.l.p.width();
+    
+    console.log( '> sizes', width, 'x', height );
+    
+    cui.el.l.p.after(
+        '<div class="phone private">\
+            <div class="viewport remote">\
+                <div class="video">\
+                    <video autoplay></video>\
+                </div>\
+                <div class="label">' + peer.user + '</div>\
+            </div>\
+            <div class="viewport local">\
+                <div class="video">\
+                    <video autoplay></video>\
+                </div>\
+                <div class="label">you</div>\
+            </div>\
+        </div>'
+    );
+    
+    var pui = cui.el.m.find( 'div.phone' );
+    pui.height( height );
+    
+    var rvid = pui.find('.viewport.remote video');
+    var lvid = pui.find('.viewport.local video');
+    
+    if( this.url )
+        lvid[0].src = this.url;
+    
+    call.onlocalstream = function(  ) {
+        lvid[0].src = call.localurl;
+    };
+    
+    peer.onremotestream = function(  ) {
+    
+        rvid[0].src = URL.createObjectURL( peer.remote_stream );
+    
+    };
+    
+
+};
+
 /**
  * Signal handling class.
  *
