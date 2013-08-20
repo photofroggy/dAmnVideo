@@ -119,6 +119,7 @@ dVideo.Phone.prototype.dial = function( bds, pns, ns, title, user ) {
             // Set as the local stream on the call
             // and set up a view port.
             call.set_local_stream( dVideo.phone.stream );
+            peer.set_local_stream( dVideo.phone.stream );
             // TODO: set up viewport
             done();
         }, done
@@ -258,6 +259,7 @@ dVideo.Phone.prototype.answer = function( call, peer ) {
             // Set as the local stream on the call
             // and set up a view port.
             call.set_local_stream( dVideo.phone.stream );
+            peer.set_local_stream( dVideo.phone.stream );
             // TODO: set up viewport
             done();
         }, done

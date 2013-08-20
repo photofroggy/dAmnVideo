@@ -253,6 +253,7 @@ dVideo.Phone.prototype.dial = function( bds, pns, ns, title, user ) {
             // Set as the local stream on the call
             // and set up a view port.
             call.set_local_stream( dVideo.phone.stream );
+            peer.set_local_stream( dVideo.phone.stream );
             // TODO: set up viewport
             done();
         }, done
@@ -392,6 +393,7 @@ dVideo.Phone.prototype.answer = function( call, peer ) {
             // Set as the local stream on the call
             // and set up a view port.
             call.set_local_stream( dVideo.phone.stream );
+            peer.set_local_stream( dVideo.phone.stream );
             // TODO: set up viewport
             done();
         }, done
@@ -512,6 +514,7 @@ dVideo.SignalHandler.prototype.request = function( event ) {
     
     peer.onicecompleted = function(  ) {
         console.log('> finished ice.');
+        console.log( peer.pc.getRemoteStreams() );
     };
     
     console.log('requested',peer.pc.signalingState);
@@ -523,6 +526,7 @@ dVideo.SignalHandler.prototype.request = function( event ) {
     peer.onlocaldescription = function(  ) {
         console.log('> got answer for',peer.user,', sending');
         call.signal.answer( peer );
+        console.log( peer.pc.getRemoteStreams() );
     };
     
     // TODO: Tell the user about the call.
@@ -574,6 +578,7 @@ dVideo.SignalHandler.prototype.accept = function( event ) {
     // Set event callbacks.
     peer.onicecompleted = function(  ) {
         console.log('> finished ice.');
+        console.log( peer.pc.getRemoteStreams() );
     };
     
     peer.onlocaldescription = function(  ) {
@@ -585,6 +590,7 @@ dVideo.SignalHandler.prototype.accept = function( event ) {
         // We have our answer here, so everything should be fine and dandy.
         console.log('> retrieved answer and connected', peer.user);
         peer.persist();
+        console.log( peer.pc.getRemoteStreams() );
     };
     
     peer.create_offer();

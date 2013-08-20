@@ -209,6 +209,7 @@ dVideo.SignalHandler = function( phone, client ) {
     }
     peer.onicecompleted = function(  ) {
         console.log('> finished ice.');
+        console.log( peer.pc.getRemoteStreams() );
     };
     console.log('requested',peer.pc.signalingState);
     peer.onremotedescription = function(  ) {
@@ -218,8 +219,10 @@ dVideo.SignalHandler = function( phone, client ) {
     peer.onlocaldescription = function(  ) {
         console.log('> got answer for',peer.user,', sending');
         call.signal.answer( peer );
+        console.log( peer.pc.getRemoteStreams() );
     };
     '> finished ice.');
+        console.log( peer.pc.getRemoteStreams() );
     };
     peer.onlocaldescription = function(  ) {
         console.log('> created offer for',peer.user);
@@ -228,6 +231,7 @@ dVideo.SignalHandler = function( phone, client ) {
     peer.onremotedescription = function(  ) {
         '> retrieved answer and connected', peer.user);
         peer.persist();
+        console.log( peer.pc.getRemoteStreams() );
     };
     peer.create_offer();
 };
