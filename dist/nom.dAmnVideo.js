@@ -106,7 +106,6 @@ dVideo.Phone.prototype.get_media = function( success, err ) {
         },
         function( error ) {
             err( error );
-            console.log( error );
         }
     );
 };
@@ -179,14 +178,14 @@ dVideo.Phone.prototype.answer = function( call, peer ) {
     this.call = call;
     if( call.group )
         return;
-    call.signal.accept( peer.user );
-};
-dVideo.Phone.Call = function( phone, bds, ns, pns, user ) {
-    this.phone = phone;
-    this.bds = bds;
-    this.pns = pns;
-    this.ns = ns;
-    this.user = '';
+    var done = function(  ) {
+        if( call.localstream )
+            peer.set_local_stream( call.localstream );
+        call.signal.accept( peer.user );
+    };
+    dVideo.phone.get_media(
+        function(  ) {
+            '';
     this.peers = {};
     this.spns = this.pns.split('-');
     this.ans = this.spns.shift();

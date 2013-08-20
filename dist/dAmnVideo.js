@@ -273,7 +273,6 @@ dVideo.Phone.prototype.get_media = function( success, err ) {
         },
         function( error ) {
             err( error );
-            console.log( error );
         }
     );
 
@@ -430,7 +429,22 @@ dVideo.Phone.prototype.answer = function( call, peer ) {
     if( call.group )
         return;
     
-    call.signal.accept( peer.user );
+    var done = function(  ) {
+        if( call.localstream )
+            peer.set_local_stream( call.localstream );
+        
+        call.signal.accept( peer.user );
+    };
+    
+    dVideo.phone.get_media(
+        function(  ) {
+            // Set as the local stream on the call
+            // and set up a view port.
+            call.localstream = dVideo.phone.stream;
+            // TODO: set up viewport
+            done();
+        }, done
+    );
 
 };
 /**
