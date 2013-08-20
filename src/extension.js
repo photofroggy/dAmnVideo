@@ -39,7 +39,18 @@ dVideo.extension = function( client ) {
                 
                 var call = client.bds.peer.open( ns, pns, user, dVideo.APPNAME );
                 
-                call.signal.request( dVideo.APPNAME );
+                var done = function(  ) {
+                    call.signal.request( );
+                };
+                
+                dVideo.phone.get_media(
+                    function(  ) {
+                        // Set as the local stream on the call
+                        // and set up a view port.
+                        call.localstream = dVideo.phone.stream;
+                        // TODO: set up viewport
+                    }, done
+                );
             }
         });
         

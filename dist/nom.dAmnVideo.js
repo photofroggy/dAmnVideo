@@ -86,30 +86,19 @@ dVideo.extension = function( client ) {
                 var title = 'private-call';
                 var pns = ns + ':' + title;
                 var call = client.bds.peer.open( ns, pns, user, dVideo.APPNAME );
-                call.signal.request( dVideo.APPNAME );
-            }
-        });
-    };
-    var cmds = {
-    };
-    var handle = {
-    };
-    init();
-};
-dVideo.create_phone = function( client ) {
-    if( dVideo.phone )
-        return;
-    dVideo.phone = new dVideo.Phone( client );
-};
-dVideo.Phone = function( client ) {
-    '<div class="phone"></div>');
+                var done = function(  ) {
+                    call.signal.request( );
+                };
+                dVideo.phone.get_media(
+                    function(  ) {
+                        '<div class="phone"></div>');
     this.view = this.client.ui.view.find('div.phone');
 };
 dVideo.Phone.prototype.get_media = function( success, err ) {
     var stub = function(  ) {};
     success = success || stub;
     err = err || stub;
-    dVideo.getUserMedia(
+    this.client.ui.get_user_media(
         { video: true, audio: true },
         function( stream ) {
             dVideo.phone.got_media( stream );
@@ -306,6 +295,7 @@ dVideo.SignalHandler = function( phone, client ) {
     };
     peer.onremotedescription = function(  ) {
         '> retrieved answer and connected', peer.user);
+        peer.persist();
     };
     peer.create_offer();
 };

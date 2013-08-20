@@ -113,8 +113,7 @@ dVideo.SignalHandler.prototype.accept = function( event ) {
     var call = event.call;
     var peer = event.peer;
     
-    // TODO: Ensure media has been retrieved before sending an offer or something
-    //       Add more checks for greater control or whatever.
+    // Set event callbacks.
     peer.onicecompleted = function(  ) {
         console.log('> finished ice.');
     };
@@ -127,6 +126,7 @@ dVideo.SignalHandler.prototype.accept = function( event ) {
     peer.onremotedescription = function(  ) {
         // We have our answer here, so everything should be fine and dandy.
         console.log('> retrieved answer and connected', peer.user);
+        peer.persist();
     };
     
     peer.create_offer();

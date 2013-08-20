@@ -62,7 +62,7 @@ dVideo.Phone.prototype.get_media = function( success, err ) {
     success = success || stub;
     err = err || stub;
     
-    dVideo.getUserMedia(
+    this.client.ui.get_user_media(
         { video: true, audio: true },
         function( stream ) {
             dVideo.phone.got_media( stream );

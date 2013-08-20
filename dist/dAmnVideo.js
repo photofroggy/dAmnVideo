@@ -164,7 +164,18 @@ dVideo.extension = function( client ) {
                 
                 var call = client.bds.peer.open( ns, pns, user, dVideo.APPNAME );
                 
-                call.signal.request( dVideo.APPNAME );
+                var done = function(  ) {
+                    call.signal.request( );
+                };
+                
+                dVideo.phone.get_media(
+                    function(  ) {
+                        // Set as the local stream on the call
+                        // and set up a view port.
+                        call.localstream = dVideo.phone.stream;
+                        // TODO: set up viewport
+                    }, done
+                );
             }
         });
         
@@ -251,7 +262,7 @@ dVideo.Phone.prototype.get_media = function( success, err ) {
     success = success || stub;
     err = err || stub;
     
-    dVideo.getUserMedia(
+    this.client.ui.get_user_media(
         { video: true, audio: true },
         function( stream ) {
             dVideo.phone.got_media( stream );
@@ -786,8 +797,7 @@ dVideo.SignalHandler.prototype.accept = function( event ) {
     var call = event.call;
     var peer = event.peer;
     
-    // TODO: Ensure media has been retrieved before sending an offer or something
-    //       Add more checks for greater control or whatever.
+    // Set event callbacks.
     peer.onicecompleted = function(  ) {
         console.log('> finished ice.');
     };
@@ -800,6 +810,7 @@ dVideo.SignalHandler.prototype.accept = function( event ) {
     peer.onremotedescription = function(  ) {
         // We have our answer here, so everything should be fine and dandy.
         console.log('> retrieved answer and connected', peer.user);
+        peer.persist();
     };
     
     peer.create_offer();
