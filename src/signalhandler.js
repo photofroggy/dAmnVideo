@@ -54,7 +54,6 @@ dVideo.SignalHandler.prototype.request = function( event ) {
     
     peer.onicecompleted = function(  ) {
         console.log('> finished ice.');
-        console.log( peer.pc.getRemoteStreams() );
     };
     
     peer.onremotedescription = function(  ) {

@@ -47,7 +47,12 @@ dVideo.extension = function( client ) {
             handler: function(  ) {
                 var cui = client.ui.chatbook.current;
                 '#' ) {
-                    'private-call';
+                    'Group calls not implemented yet! If you want group calls, let photofroggy know.' );
+                    return;
+                }
+                var ns = cui.raw;
+                var user = cui.namespace.substr(1);
+                var title = 'private-call';
                 dVideo.phone.dial( ns, ns + ':' + title, cui.namespace, title, user );
             }
         });
@@ -102,7 +107,7 @@ dVideo.Phone.prototype.dial = function( bds, pns, ns, title, user ) {
             'ref': 'call-' + peer.user,
             'icon': '<img src="' + wsc.dAmn.avatar.src(peer.user,
                 client.channel(call.ns).info.members[peer.user].usericon) + '" />',
-            'heading': peer.user + ' calling...',
+            'heading': 'Incoming Call',
             'content': peer.user + ' is calling you.',
             'buttons': {
                 'answer': {
@@ -208,7 +213,6 @@ dVideo.SignalHandler = function( phone, client ) {
     }
     peer.onicecompleted = function(  ) {
         console.log('> finished ice.');
-        console.log( peer.pc.getRemoteStreams() );
     };
     peer.onremotedescription = function(  ) {
         peer.create_answer();

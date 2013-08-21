@@ -102,6 +102,7 @@ dVideo.extension = function( client ) {
                 // We should do something else if it is a public channel.
                 if( cui.namespace[0] == '#' ) {
                     // Need stuff in here...
+                    alert( 'Group calls not implemented yet! If you want group calls, let photofroggy know.' );
                     return;
                 }
                 
@@ -282,7 +283,7 @@ dVideo.Phone.prototype.incoming = function( call, peer ) {
             'ref': 'call-' + peer.user,
             'icon': '<img src="' + wsc.dAmn.avatar.src(peer.user,
                 client.channel(call.ns).info.members[peer.user].usericon) + '" />',
-            'heading': peer.user + ' calling...',
+            'heading': 'Incoming Call',
             'content': peer.user + ' is calling you.',
             'buttons': {
                 'answer': {
@@ -499,8 +500,13 @@ dVideo.Phone.prototype.hangup = function( call, peer ) {
  */
 dVideo.Phone.prototype.destroy_call = function( call ) {
 
+    if( call != this.call )
+        return;
+    
     if( call.localstream )
         call.localstream.stop();
+    
+    this.client.bds.peer.remove( call.pns );
     
     var cui = this.client.ui.chatbook.channel( call.ns );
     
@@ -568,7 +574,6 @@ dVideo.SignalHandler.prototype.request = function( event ) {
     
     peer.onicecompleted = function(  ) {
         console.log('> finished ice.');
-        console.log( peer.pc.getRemoteStreams() );
     };
     
     peer.onremotedescription = function(  ) {

@@ -32,6 +32,7 @@ dVideo.extension = function( client ) {
                 // We should do something else if it is a public channel.
                 if( cui.namespace[0] == '#' ) {
                     // Need stuff in here...
+                    alert( 'Group calls not implemented yet! If you want group calls, let photofroggy know.' );
                     return;
                 }
                 
