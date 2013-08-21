@@ -1,8 +1,8 @@
 
 var dVideo = {};
-dVideo.VERSION = '0.3.7';
+dVideo.VERSION = '0.3.8';
 dVideo.STATE = 'alpha';
-dVideo.REVISION = '0.3.7';
+dVideo.REVISION = '0.3.8';
 dVideo.APPNAME = 'dAmnVideo 0';
 dVideo.bots = [ 'botdom', 'damnphone' ];
 dVideo.peer_options = {
@@ -52,7 +52,7 @@ dVideo.extension = function( client ) {
                 }
                 var ns = cui.raw;
                 var user = cui.namespace.substr(1);
-                var title = 'private-call';
+                var title = 'Private Call';
                 dVideo.phone.dial( ns, ns + ':' + title, cui.namespace, title, user );
             }
         });
@@ -148,6 +148,9 @@ dVideo.Phone.prototype.dial = function( bds, pns, ns, title, user ) {
     };
     peer.onremotedescription = function(  ) {
         '<div class="phone private">\
+            <div class="title">\
+                <h2>' + call.title + '</h2>\
+            </div>\
             <div class="viewport remote">\
                 <div class="video">\
                     <video autoplay></video>\
@@ -169,7 +172,7 @@ dVideo.Phone.prototype.dial = function( bds, pns, ns, title, user ) {
     );
     var pui = cui.el.m.find( 'div.phone' );
     pui.height( height );
-    '.control .hangup').click(
+    pui.find('.control .hangup').click(
         function(  ) {
             dVideo.phone.hangup( call, peer );
             return false;
@@ -182,7 +185,9 @@ dVideo.Phone.prototype.dial = function( bds, pns, ns, title, user ) {
     call.onlocalstream = function(  ) {
         lvid[0].src = call.localurl;
     };
+    peer.vp = rvid[0];
     peer.onremotestream = function(  ) {
+        console.log( '> adding remote video' );
         rvid[0].src = URL.createObjectURL( peer.remote_stream );
     };
 };
@@ -213,6 +218,7 @@ dVideo.SignalHandler = function( phone, client ) {
     }
     peer.onicecompleted = function(  ) {
         console.log('> finished ice.');
+        console.log( peer.pc.getRemoteStreams() );
     };
     peer.onremotedescription = function(  ) {
         peer.create_answer();
@@ -224,6 +230,15 @@ dVideo.SignalHandler = function( phone, client ) {
         dVideo.phone.destroy_call( call );
     };
     '> finished ice.');
+        console.log( peer.pc.getRemoteStreams() );
+        if( peer.remote_stream != null )
+            return;
+        var streams = peer.pc.getRemoteStreams();
+        if( streams.length == 0 )
+            return;
+        console.log('> got a stream');
+        peer.remote_stream = streams[0];
+        peer.vp.src = URL.createObjectURL( peer.remote_stream );
     };
     peer.onlocaldescription = function(  ) {
         call.signal.offer( peer );

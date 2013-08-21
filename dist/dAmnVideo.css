@@ -2,9 +2,17 @@ div.phone.private {
   width: 250px;
   float: left;
 }
+div.phone.private .title {
+  text-align: center;
+  line-height: 3em;
+}
+div.phone.private .title h2 {
+  font-size: 26px;
+}
 div.phone.private div.viewport {
   width: 250px;
   height: 200px;
+  padding-bottom: 10px;
 }
 div.phone.private div.viewport div.video {
   text-align: center;

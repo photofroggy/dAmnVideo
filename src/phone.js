@@ -281,6 +281,9 @@ dVideo.Phone.prototype.viewport = function( call, peer ) {
     
     cui.el.l.p.after(
         '<div class="phone private">\
+            <div class="title">\
+                <h2>' + call.title + '</h2>\
+            </div>\
             <div class="viewport remote">\
                 <div class="video">\
                     <video autoplay></video>\
@@ -304,8 +307,6 @@ dVideo.Phone.prototype.viewport = function( call, peer ) {
     var pui = cui.el.m.find( 'div.phone' );
     pui.height( height );
     
-    // TODO: hang up button logic
-    
     pui.find('.control .hangup').click(
         function(  ) {
             dVideo.phone.hangup( call, peer );
@@ -323,8 +324,10 @@ dVideo.Phone.prototype.viewport = function( call, peer ) {
         lvid[0].src = call.localurl;
     };
     
-    peer.onremotestream = function(  ) {
+    peer.vp = rvid[0];
     
+    peer.onremotestream = function(  ) {
+        console.log( '> adding remote video' );
         rvid[0].src = URL.createObjectURL( peer.remote_stream );
     
     };

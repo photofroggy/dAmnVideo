@@ -4,9 +4,9 @@
  * @module dVideo
  */
 var dVideo = {};
-dVideo.VERSION = '0.3.7';
+dVideo.VERSION = '0.3.8';
 dVideo.STATE = 'alpha';
-dVideo.REVISION = '0.3.7';
+dVideo.REVISION = '0.3.8';
 dVideo.APPNAME = 'dAmnVideo 0';
 
 
@@ -108,7 +108,7 @@ dVideo.extension = function( client ) {
                 
                 var ns = cui.raw;
                 var user = cui.namespace.substr(1);
-                var title = 'private-call';
+                var title = 'Private Call';
                                 
                 dVideo.phone.dial( ns, ns + ':' + title, cui.namespace, title, user );
             }
@@ -416,6 +416,9 @@ dVideo.Phone.prototype.viewport = function( call, peer ) {
     
     cui.el.l.p.after(
         '<div class="phone private">\
+            <div class="title">\
+                <h2>' + call.title + '</h2>\
+            </div>\
             <div class="viewport remote">\
                 <div class="video">\
                     <video autoplay></video>\
@@ -439,8 +442,6 @@ dVideo.Phone.prototype.viewport = function( call, peer ) {
     var pui = cui.el.m.find( 'div.phone' );
     pui.height( height );
     
-    // TODO: hang up button logic
-    
     pui.find('.control .hangup').click(
         function(  ) {
             dVideo.phone.hangup( call, peer );
@@ -458,8 +459,10 @@ dVideo.Phone.prototype.viewport = function( call, peer ) {
         lvid[0].src = call.localurl;
     };
     
-    peer.onremotestream = function(  ) {
+    peer.vp = rvid[0];
     
+    peer.onremotestream = function(  ) {
+        console.log( '> adding remote video' );
         rvid[0].src = URL.createObjectURL( peer.remote_stream );
     
     };
@@ -574,6 +577,7 @@ dVideo.SignalHandler.prototype.request = function( event ) {
     
     peer.onicecompleted = function(  ) {
         console.log('> finished ice.');
+        console.log( peer.pc.getRemoteStreams() );
     };
     
     peer.onremotedescription = function(  ) {
@@ -637,6 +641,18 @@ dVideo.SignalHandler.prototype.accept = function( event ) {
     // Set event callbacks.
     peer.onicecompleted = function(  ) {
         console.log('> finished ice.');
+        console.log( peer.pc.getRemoteStreams() );
+        if( peer.remote_stream != null )
+            return;
+        
+        var streams = peer.pc.getRemoteStreams();
+        
+        if( streams.length == 0 )
+            return;
+        
+        console.log('> got a stream');
+        peer.remote_stream = streams[0];
+        peer.vp.src = URL.createObjectURL( peer.remote_stream );
     };
     
     peer.onlocaldescription = function(  ) {

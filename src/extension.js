@@ -38,7 +38,7 @@ dVideo.extension = function( client ) {
                 
                 var ns = cui.raw;
                 var user = cui.namespace.substr(1);
-                var title = 'private-call';
+                var title = 'Private Call';
                                 
                 dVideo.phone.dial( ns, ns + ':' + title, cui.namespace, title, user );
             }

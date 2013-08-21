@@ -54,6 +54,7 @@ dVideo.SignalHandler.prototype.request = function( event ) {
     
     peer.onicecompleted = function(  ) {
         console.log('> finished ice.');
+        console.log( peer.pc.getRemoteStreams() );
     };
     
     peer.onremotedescription = function(  ) {
@@ -117,6 +118,18 @@ dVideo.SignalHandler.prototype.accept = function( event ) {
     // Set event callbacks.
     peer.onicecompleted = function(  ) {
         console.log('> finished ice.');
+        console.log( peer.pc.getRemoteStreams() );
+        if( peer.remote_stream != null )
+            return;
+        
+        var streams = peer.pc.getRemoteStreams();
+        
+        if( streams.length == 0 )
+            return;
+        
+        console.log('> got a stream');
+        peer.remote_stream = streams[0];
+        peer.vp.src = URL.createObjectURL( peer.remote_stream );
     };
     
     peer.onlocaldescription = function(  ) {

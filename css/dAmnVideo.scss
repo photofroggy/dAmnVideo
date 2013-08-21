@@ -5,10 +5,20 @@ div.phone {
         width: 250px;
         float: left;
         
+        .title {
+            text-align: center;
+            line-height: 3em;
+            
+            h2 {
+                font-size: 26px;
+            }
+        }
+        
         div.viewport {
             width: 250px;
             height: 200px;
-                
+            padding-bottom: 10px;
+            
             div.video {
                 text-align: center;
                 height: 180px;
