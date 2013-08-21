@@ -1,8 +1,8 @@
 
 var dVideo = {};
-dVideo.VERSION = '0.2.6';
+dVideo.VERSION = '0.3.7';
 dVideo.STATE = 'alpha';
-dVideo.REVISION = '0.2.6';
+dVideo.REVISION = '0.3.7';
 dVideo.APPNAME = 'dAmnVideo 0';
 dVideo.bots = [ 'botdom', 'damnphone' ];
 dVideo.peer_options = {
@@ -156,7 +156,7 @@ dVideo.Phone.prototype.dial = function( bds, pns, ns, title, user ) {
             </div>\
             <div class="viewport local">\
                 <div class="video">\
-                    <video autoplay></video>\
+                    <video autoplay muted></video>\
                 </div>\
                 <div class="label">you</div>\
             </div>\

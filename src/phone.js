@@ -289,7 +289,7 @@ dVideo.Phone.prototype.viewport = function( call, peer ) {
             </div>\
             <div class="viewport local">\
                 <div class="video">\
-                    <video autoplay></video>\
+                    <video autoplay muted></video>\
                 </div>\
                 <div class="label">you</div>\
             </div>\
