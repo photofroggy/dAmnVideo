@@ -2,16 +2,17 @@
 div.phone {
     
     &.private {
-        width: 475px;
+        width: 250px;
         float: left;
         
         div.viewport {
-            width: 475px;
-            height: 200px;
+            width: 250px;
+            height: 225px;
                 
             div.video {
                 text-align: center;
                 height: 175px;
+                background-color: black;
                 
                 video {
                     height: 175px;
@@ -21,6 +22,16 @@ div.phone {
             div.label {
                 height: 50px;
                 text-align: center;
+            }
+        }
+        
+        div.control {
+            text-align: center;
+            ul {
+                list-style: none;
+                li {
+                    display: inline-block;
+                }
             }
         }
     }

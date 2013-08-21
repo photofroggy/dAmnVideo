@@ -139,29 +139,9 @@ dVideo.Phone.prototype.dial = function( bds, pns, ns, title, user ) {
     '> finished ice.');
     };
     peer.onlocaldescription = function(  ) {
-        console.log('> created offer for',peer.user);
         call.signal.offer( peer );
     };
     peer.onremotedescription = function(  ) {
-        '> retrieved answer and connected', peer.user);
-        peer.persist();
-    };
-    peer.create_offer();
-};
-dVideo.Phone.prototype.answer = function( call, peer ) {
-    this.call = call;
-    if( call.group )
-        return;
-    var done = function(  ) {
-        if( call.localstream )
-            peer.set_local_stream( call.localstream );
-        call.signal.accept( peer.user );
-    };
-    this.viewport( call, peer );
-    this.get_media(
-        function(  ) {
-            '> sizes', width, 'x', height );
-    cui.el.l.p.after(
         '<div class="phone private">\
             <div class="viewport remote">\
                 <div class="video">\
@@ -175,10 +155,21 @@ dVideo.Phone.prototype.answer = function( call, peer ) {
                 </div>\
                 <div class="label">you</div>\
             </div>\
+            <div class="control">\
+                <ul>\
+                    <li><a href="#hangup" title="End the call" class="button hangup">Hang Up</a></li>\
+                </u>\
+            </div>\
         </div>'
     );
     var pui = cui.el.m.find( 'div.phone' );
     pui.height( height );
+    '.control .hangup').click(
+        function(  ) {
+            dVideo.phone.hangup( call, peer );
+            return false;
+        }
+    );
     var rvid = pui.find('.viewport.remote video');
     var lvid = pui.find('.viewport.local video');
     if( this.url )
@@ -189,6 +180,12 @@ dVideo.Phone.prototype.answer = function( call, peer ) {
     peer.onremotestream = function(  ) {
         rvid[0].src = URL.createObjectURL( peer.remote_stream );
     };
+};
+dVideo.Phone.prototype.hangup = function( call, peer ) {
+    this.destroy_call( call );
+    if( call.group ) {
+        'div.phone').remove();
+    this.call = null;
 };
 dVideo.SignalHandler = function( phone, client ) {
     this.phone = phone;
@@ -211,45 +208,23 @@ dVideo.SignalHandler = function( phone, client ) {
         console.log('> finished ice.');
         console.log( peer.pc.getRemoteStreams() );
     };
-    console.log('requested',peer.pc.signalingState);
     peer.onremotedescription = function(  ) {
-        console.log( '> got offer from',peer.user,', answering');
         peer.create_answer();
     };
     peer.onlocaldescription = function(  ) {
-        console.log('> got answer for',peer.user,', sending');
         call.signal.answer( peer );
-        console.log( peer.pc.getRemoteStreams() );
+    };
+    peer.onclose = function(  ) {
+        dVideo.phone.destroy_call( call );
     };
     '> finished ice.');
         console.log( peer.pc.getRemoteStreams() );
     };
     peer.onlocaldescription = function(  ) {
-        console.log('> created offer for',peer.user);
         call.signal.offer( peer );
     };
     peer.onremotedescription = function(  ) {
-        '> retrieved answer and connected', peer.user);
-        peer.persist();
-        console.log( peer.pc.getRemoteStreams() );
-    };
-    peer.create_offer();
-};
-dVideo.SignalHandler.prototype.open = function( event ) {};
-dVideo.SignalHandler.prototype.end = function( event ) {};
-dVideo.SignalHandler.prototype.offer = function( event ) {
-    if( dVideo.APPNAME != event.call.app )
-        return;
-    var call = event.call;
-    var peer = event.peer;
-    var offer = event.offer;
-    peer.onremotedescription = function( ) {
-        peer.answer();
-    };
-    peer.ready(
-        function(  ) {
-            call.signal.answer( peer );
-            console.log('> connected to new peer', peer.user);
+        '> connected to new peer', peer.user);
         },
         offer
     );

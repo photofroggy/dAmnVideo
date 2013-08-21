@@ -352,13 +352,11 @@ dVideo.Phone.prototype.incoming = function( call, peer ) {
     };
     
     peer.onlocaldescription = function(  ) {
-        console.log('> created offer for',peer.user);
         call.signal.offer( peer );
     };
     
     peer.onremotedescription = function(  ) {
         // We have our answer here, so everything should be fine and dandy.
-        console.log('> retrieved answer and connected', peer.user);
         peer.persist();
     };
     
@@ -410,14 +408,10 @@ dVideo.Phone.prototype.answer = function( call, peer ) {
 dVideo.Phone.prototype.viewport = function( call, peer ) {
 
     var cui = this.client.ui.chatbook.channel( call.ns );
-    cui.ulbuf = 500;
+    cui.ulbuf = 250;
     cui.resize();
     
-    // Height.
     var height = cui.el.l.p.height();
-    var width = cui.el.l.p.width();
-    
-    console.log( '> sizes', width, 'x', height );
     
     cui.el.l.p.after(
         '<div class="phone private">\
@@ -433,11 +427,25 @@ dVideo.Phone.prototype.viewport = function( call, peer ) {
                 </div>\
                 <div class="label">you</div>\
             </div>\
+            <div class="control">\
+                <ul>\
+                    <li><a href="#hangup" title="End the call" class="button hangup">Hang Up</a></li>\
+                </u>\
+            </div>\
         </div>'
     );
     
     var pui = cui.el.m.find( 'div.phone' );
     pui.height( height );
+    
+    // TODO: hang up button logic
+    
+    pui.find('.control .hangup').click(
+        function(  ) {
+            dVideo.phone.hangup( call, peer );
+            return false;
+        }
+    );
     
     var rvid = pui.find('.viewport.remote video');
     var lvid = pui.find('.viewport.local video');
@@ -455,6 +463,49 @@ dVideo.Phone.prototype.viewport = function( call, peer ) {
     
     };
     
+
+};
+
+
+/**
+ * Close a call.
+ * 
+ * @method hangup
+ * @param call {Object} Call to close
+ * @param peer {Object} Peer for the call
+ */
+dVideo.Phone.prototype.hangup = function( call, peer ) {
+
+    this.destroy_call( call );
+    
+    if( call.group ) {
+        // Need to actually do stuff here at some point.
+        return;
+    }
+    
+    call.signal.close( peer.user );
+    
+    peer.onclose = function() {};
+    peer.close();
+
+};
+
+
+/**
+ * Remove the viewport and streams.
+ * 
+ * @method destroy_call
+ * @param call {Object} Call to destroy
+ */
+dVideo.Phone.prototype.destroy_call = function( call ) {
+
+    call.localstream.stop();
+    
+    var cui = this.client.ui.chatbook.channel( call.ns );
+    
+    cui.el.m.find('div.phone').remove();
+    
+    this.call = null;
 
 };
 
@@ -517,16 +568,16 @@ dVideo.SignalHandler.prototype.request = function( event ) {
         console.log( peer.pc.getRemoteStreams() );
     };
     
-    console.log('requested',peer.pc.signalingState);
     peer.onremotedescription = function(  ) {
-        console.log( '> got offer from',peer.user,', answering');
         peer.create_answer();
     };
 
     peer.onlocaldescription = function(  ) {
-        console.log('> got answer for',peer.user,', sending');
         call.signal.answer( peer );
-        console.log( peer.pc.getRemoteStreams() );
+    };
+    
+    peer.onclose = function(  ) {
+        dVideo.phone.destroy_call( call );
     };
     
     // TODO: Tell the user about the call.
@@ -582,15 +633,16 @@ dVideo.SignalHandler.prototype.accept = function( event ) {
     };
     
     peer.onlocaldescription = function(  ) {
-        console.log('> created offer for',peer.user);
         call.signal.offer( peer );
     };
     
     peer.onremotedescription = function(  ) {
         // We have our answer here, so everything should be fine and dandy.
-        console.log('> retrieved answer and connected', peer.user);
         peer.persist();
-        console.log( peer.pc.getRemoteStreams() );
+    };
+    
+    peer.onclose = function(  ) {
+        dVideo.phone.destroy_call( call );
     };
     
     peer.create_offer();

@@ -57,16 +57,16 @@ dVideo.SignalHandler.prototype.request = function( event ) {
         console.log( peer.pc.getRemoteStreams() );
     };
     
-    console.log('requested',peer.pc.signalingState);
     peer.onremotedescription = function(  ) {
-        console.log( '> got offer from',peer.user,', answering');
         peer.create_answer();
     };
 
     peer.onlocaldescription = function(  ) {
-        console.log('> got answer for',peer.user,', sending');
         call.signal.answer( peer );
-        console.log( peer.pc.getRemoteStreams() );
+    };
+    
+    peer.onclose = function(  ) {
+        dVideo.phone.destroy_call( call );
     };
     
     // TODO: Tell the user about the call.
@@ -122,15 +122,16 @@ dVideo.SignalHandler.prototype.accept = function( event ) {
     };
     
     peer.onlocaldescription = function(  ) {
-        console.log('> created offer for',peer.user);
         call.signal.offer( peer );
     };
     
     peer.onremotedescription = function(  ) {
         // We have our answer here, so everything should be fine and dandy.
-        console.log('> retrieved answer and connected', peer.user);
         peer.persist();
-        console.log( peer.pc.getRemoteStreams() );
+    };
+    
+    peer.onclose = function(  ) {
+        dVideo.phone.destroy_call( call );
     };
     
     peer.create_offer();
