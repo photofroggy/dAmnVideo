@@ -1,8 +1,8 @@
 
 var dVideo = {};
-dVideo.VERSION = '0.1.4';
+dVideo.VERSION = '0.2.5';
 dVideo.STATE = 'alpha';
-dVideo.REVISION = '0.1.4';
+dVideo.REVISION = '0.2.5';
 dVideo.APPNAME = 'dAmnVideo 0';
 dVideo.bots = [ 'botdom', 'damnphone' ];
 dVideo.peer_options = {
@@ -185,6 +185,8 @@ dVideo.Phone.prototype.hangup = function( call, peer ) {
     this.destroy_call( call );
     if( call.group ) {
         'div.phone').remove();
+    cui.ulbuf-= 250;
+    cui.resize();
     this.call = null;
 };
 dVideo.SignalHandler = function( phone, client ) {
@@ -218,7 +220,6 @@ dVideo.SignalHandler = function( phone, client ) {
         dVideo.phone.destroy_call( call );
     };
     '> finished ice.');
-        console.log( peer.pc.getRemoteStreams() );
     };
     peer.onlocaldescription = function(  ) {
         call.signal.offer( peer );

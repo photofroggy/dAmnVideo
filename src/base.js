@@ -4,9 +4,9 @@
  * @module dVideo
  */
 var dVideo = {};
-dVideo.VERSION = '0.1.4';
+dVideo.VERSION = '0.2.5';
 dVideo.STATE = 'alpha';
-dVideo.REVISION = '0.1.4';
+dVideo.REVISION = '0.2.5';
 dVideo.APPNAME = 'dAmnVideo 0';
 
 

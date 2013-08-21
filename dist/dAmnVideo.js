@@ -4,9 +4,9 @@
  * @module dVideo
  */
 var dVideo = {};
-dVideo.VERSION = '0.1.4';
+dVideo.VERSION = '0.2.5';
 dVideo.STATE = 'alpha';
-dVideo.REVISION = '0.1.4';
+dVideo.REVISION = '0.2.5';
 dVideo.APPNAME = 'dAmnVideo 0';
 
 
@@ -408,7 +408,7 @@ dVideo.Phone.prototype.answer = function( call, peer ) {
 dVideo.Phone.prototype.viewport = function( call, peer ) {
 
     var cui = this.client.ui.chatbook.channel( call.ns );
-    cui.ulbuf = 250;
+    cui.ulbuf+= 250;
     cui.resize();
     
     var height = cui.el.l.p.height();
@@ -483,7 +483,7 @@ dVideo.Phone.prototype.hangup = function( call, peer ) {
         return;
     }
     
-    call.signal.close( peer.user );
+    call.signal.close( this.client.settings.username );
     
     peer.onclose = function() {};
     peer.close();
@@ -499,11 +499,14 @@ dVideo.Phone.prototype.hangup = function( call, peer ) {
  */
 dVideo.Phone.prototype.destroy_call = function( call ) {
 
-    call.localstream.stop();
+    if( call.localstream )
+        call.localstream.stop();
     
     var cui = this.client.ui.chatbook.channel( call.ns );
     
     cui.el.m.find('div.phone').remove();
+    cui.ulbuf-= 250;
+    cui.resize();
     
     this.call = null;
 
@@ -629,7 +632,6 @@ dVideo.SignalHandler.prototype.accept = function( event ) {
     // Set event callbacks.
     peer.onicecompleted = function(  ) {
         console.log('> finished ice.');
-        console.log( peer.pc.getRemoteStreams() );
     };
     
     peer.onlocaldescription = function(  ) {
