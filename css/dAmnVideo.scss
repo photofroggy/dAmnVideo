@@ -7,20 +7,19 @@ div.phone {
         
         div.viewport {
             width: 250px;
-            height: 225px;
+            height: 200px;
                 
             div.video {
                 text-align: center;
-                height: 175px;
+                height: 180px;
                 background-color: black;
                 
                 video {
-                    height: 175px;
+                    height: 180px;
                 }
             }
             
             div.label {
-                height: 50px;
                 text-align: center;
             }
         }

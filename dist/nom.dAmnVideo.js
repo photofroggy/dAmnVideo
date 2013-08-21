@@ -1,8 +1,8 @@
 
 var dVideo = {};
-dVideo.VERSION = '0.2.5';
+dVideo.VERSION = '0.2.6';
 dVideo.STATE = 'alpha';
-dVideo.REVISION = '0.2.5';
+dVideo.REVISION = '0.2.6';
 dVideo.APPNAME = 'dAmnVideo 0';
 dVideo.bots = [ 'botdom', 'damnphone' ];
 dVideo.peer_options = {

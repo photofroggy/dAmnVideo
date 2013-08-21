@@ -4,18 +4,17 @@ div.phone.private {
 }
 div.phone.private div.viewport {
   width: 250px;
-  height: 225px;
+  height: 200px;
 }
 div.phone.private div.viewport div.video {
   text-align: center;
-  height: 175px;
+  height: 180px;
   background-color: black;
 }
 div.phone.private div.viewport div.video video {
-  height: 175px;
+  height: 180px;
 }
 div.phone.private div.viewport div.label {
-  height: 50px;
   text-align: center;
 }
 div.phone.private div.control {
