@@ -288,13 +288,25 @@ dVideo.Phone.prototype.viewport = function( call, peer ) {
                 <div class="video">\
                     <video autoplay></video>\
                 </div>\
-                <div class="label">' + peer.user + '</div>\
+                <div class="label">\
+                    <span class="label">' + peer.user + '</span>\
+                    <ul class="control">\
+                        <li><a href="#pause" title="Pause webcam" class="toggle pause remote">Pause</a></li>\
+                        <li><a href="#mute" title="Mute webcam" class="toggle mute remote">Mute</a></li>\
+                    </ul>\
+                </div>\
             </div>\
             <div class="viewport local">\
                 <div class="video">\
                     <video autoplay muted></video>\
                 </div>\
-                <div class="label">you</div>\
+                <div class="label">\
+                    <span class="label">You</span>\
+                    <ul class="control">\
+                        <li><a href="#pause" title="Pause your webcam" class="toggle pause">Pause</a></li>\
+                        <li><a href="#mute" title="Mute your microphone" class="toggle mute">Mute</a></li>\
+                    </ul>\
+                </div>\
             </div>\
             <div class="control">\
                 <ul>\
@@ -319,16 +331,122 @@ dVideo.Phone.prototype.viewport = function( call, peer ) {
     
     if( this.url )
         lvid[0].src = this.url;
+
+    var toggle_logic = function( options ) {
+        
+        options = Object.extend( {
+            mic: false,
+            text: {
+                pause: 'Play',
+                play: 'Pause'
+            }
+        }, ( options || {} ) );
+    
+        return function(  ) {
+            var button = pui.find( this );
+            console.log( button );
+            var remote = button.hasClass('remote');
+        
+            if( button.hasClass( 'paused' ) ) {
+                play( options.mic, remote );
+                button.text( options.text.play );
+                button.removeClass( 'paused' );
+                return false;
+            }
+        
+            pause( options.mic, remote );
+            button.text( options.text.pause );
+            button.addClass( 'paused' );
+            return false;
+        };
+    }
+    
+    pui.find( '.label .control .toggle.pause' ).click( toggle_logic() );
+    pui.find( '.label .control .toggle.mute' ).click(
+        toggle_logic({
+            mic: true,
+            text: {
+                pause: 'Unmute',
+                play: 'Mute'
+            }
+        })
+    );
+    
+    var pause = function( mic, remote ) {
+    
+        var tracks = [];
+        var l = 0;
+        
+        if( mic ) {
+            if( remote )
+                tracks = peer.remotemic;
+            else
+                tracks = call.localmic;
+        } else {
+            if( remote )
+                tracks = peer.remotevideo;
+            else
+                tracks = call.localvideo;
+        }
+        
+        l = tracks.length;
+        
+        if( l == 0 )
+            return;
+        
+        for( var i = 0; i < l; i++ ) {
+            tracks[ i ].enabled = false;
+        };
+    
+    };
+    
+    var play = function( mic, remote ) {
+    
+        var tracks = [];
+        var l = 0;
+        
+        if( mic ) {
+            if( remote )
+                tracks = peer.remotemic;
+            else
+                tracks = call.localmic;
+        } else {
+            if( remote )
+                tracks = peer.remotevideo;
+            else
+                tracks = call.localvideo;
+        }
+        
+        l = tracks.length;
+        
+        if( l == 0 )
+            return;
+        
+        for( var i = 0; i < l; i++ ) {
+            tracks[ i ].enabled = true;
+        };
+    
+    };
+    
+    call.localmic = [];
+    call.localvideo = [];
     
     call.onlocalstream = function(  ) {
         lvid[0].src = call.localurl;
+        call.localmic = call.localstream.getAudioTracks();
+        call.localvideo = call.localstream.getVideoTracks();
     };
     
     peer.vp = rvid[0];
+    peer.remotemic = [];
+    peer.remotevideo = [];
     
     peer.onremotestream = function(  ) {
         console.log( '> adding remote video' );
         rvid[0].src = URL.createObjectURL( peer.remote_stream );
+        peer.remotemic = peer.remote_stream.getAudioTracks();
+        peer.remotevideo = peer.remote_stream.getVideoTracks();
+        console.log( rvid[0].src );
     
     };
     

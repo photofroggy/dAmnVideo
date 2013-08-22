@@ -16,13 +16,17 @@ div.phone {
         
         div.viewport {
             width: 250px;
-            height: 200px;
-            padding-bottom: 10px;
+            height: 205px;
+            margin-bottom: 10px;
+            border: 1px solid white;
+            background-color: black;
+            color: white;
             
             div.video {
                 text-align: center;
                 height: 180px;
                 background-color: black;
+                border-bottom: 1px solid white;
                 
                 video {
                     height: 180px;
@@ -30,7 +34,29 @@ div.phone {
             }
             
             div.label {
-                text-align: center;
+                height: 25px;
+                overflow: auto;
+                
+                span.label {
+                    float: left;
+                    overflow: auto;
+                    padding: 2px 5px;
+                }
+                
+                ul.control {
+                    float: right;
+                    overflow: auto;
+                    list-style: none;
+                    
+                    li {
+                        display: inline-block;
+                        padding: 2px 5px 2px 0px;
+                        
+                        a.toggle {
+                            color: white;
+                        }
+                    }
+                }
             }
         }
         
