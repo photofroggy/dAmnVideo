@@ -25,6 +25,7 @@ div.phone.private div.viewport div.video {
 }
 div.phone.private div.viewport div.video video {
   height: 180px;
+  width: 240px;
 }
 div.phone.private div.viewport div.label {
   height: 25px;
