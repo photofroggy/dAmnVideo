@@ -27,7 +27,7 @@ dVideo.SignalHandler = function( phone, client ) {
  */
 dVideo.SignalHandler.prototype.request = function( event ) {
     
-    if( dVideo.APPNAME != event.call.app )
+    if( dVideo.APPNAME != event.call.app && event.call.app_ver >= dVideo.APPVERSION )
         return;
     
     var call = event.call;

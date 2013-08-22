@@ -1,9 +1,10 @@
 
 var dVideo = {};
-dVideo.VERSION = '0.4.9';
+dVideo.VERSION = '0.4.10';
 dVideo.STATE = 'alpha';
-dVideo.REVISION = '0.4.9';
-dVideo.APPNAME = 'dAmnVideo 0';
+dVideo.REVISION = '0.4.10';
+dVideo.APPNAME = 'dAmnVideo';
+dVideo.APPVERSION = 1;
 dVideo.bots = [ 'botdom', 'damnphone' ];
 dVideo.peer_options = {
     iceServers: [

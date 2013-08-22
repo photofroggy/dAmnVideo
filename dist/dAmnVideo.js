@@ -4,10 +4,11 @@
  * @module dVideo
  */
 var dVideo = {};
-dVideo.VERSION = '0.4.9';
+dVideo.VERSION = '0.4.10';
 dVideo.STATE = 'alpha';
-dVideo.REVISION = '0.4.9';
-dVideo.APPNAME = 'dAmnVideo 0';
+dVideo.REVISION = '0.4.10';
+dVideo.APPNAME = 'dAmnVideo';
+dVideo.APPVERSION = 1;
 
 
 /**
@@ -668,7 +669,7 @@ dVideo.SignalHandler = function( phone, client ) {
  */
 dVideo.SignalHandler.prototype.request = function( event ) {
     
-    if( dVideo.APPNAME != event.call.app )
+    if( dVideo.APPNAME != event.call.app && event.call.app_ver >= dVideo.APPVERSION )
         return;
     
     var call = event.call;
