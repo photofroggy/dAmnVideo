@@ -4,9 +4,9 @@
  * @module dVideo
  */
 var dVideo = {};
-dVideo.VERSION = '0.4.10';
+dVideo.VERSION = '0.5.11';
 dVideo.STATE = 'alpha';
-dVideo.REVISION = '0.4.10';
+dVideo.REVISION = '0.5.11';
 dVideo.APPNAME = 'dAmnVideo';
 dVideo.APPVERSION = 1;
 
@@ -95,7 +95,7 @@ dVideo.extension = function( client ) {
         
         
         // Assorted dAmn events
-        client.bind( 'recv_part', function( event ) { handle.recv_part( event ); } );
+        client.bind( 'pkt.recv_part', function( event ) { handle.recv_part( event ); } );
         
         
         client.ui.control.add_button({
