@@ -54,7 +54,6 @@ dVideo.SignalHandler.prototype.request = function( event ) {
     
     peer.onicecompleted = function(  ) {
         console.log('> finished ice.');
-        console.log( peer.pc.getRemoteStreams() );
     };
     
     peer.onremotedescription = function(  ) {
@@ -63,13 +62,15 @@ dVideo.SignalHandler.prototype.request = function( event ) {
 
     peer.onlocaldescription = function(  ) {
         call.signal.answer( peer );
+        dVideo.phone.client.ui.chatbook.channel( call.ns ).server_message( 'Call Started' );
+        peer.persist();
     };
     
     peer.onclose = function(  ) {
-        dVideo.phone.destroy_call( call );
+        call.close( );
+        phone.client.client.ui.pager.remove_notice( pnotice );
     };
     
-    // TODO: Tell the user about the call.
     phone.incoming( call, peer );
     
 
@@ -118,7 +119,7 @@ dVideo.SignalHandler.prototype.accept = function( event ) {
     // Set event callbacks.
     peer.onicecompleted = function(  ) {
         console.log('> finished ice.');
-        console.log( peer.pc.getRemoteStreams() );
+        
         if( peer.remote_stream != null )
             return;
         
@@ -138,11 +139,13 @@ dVideo.SignalHandler.prototype.accept = function( event ) {
     
     peer.onremotedescription = function(  ) {
         // We have our answer here, so everything should be fine and dandy.
+        dVideo.phone.client.ui.chatbook.channel( call.ns ).server_message( 'Call Started' );
         peer.persist();
     };
     
     peer.onclose = function(  ) {
-        dVideo.phone.destroy_call( call );
+        call.close( );
+        phone.client.client.ui.pager.remove_notice( pnotice );
     };
     
     peer.create_offer();

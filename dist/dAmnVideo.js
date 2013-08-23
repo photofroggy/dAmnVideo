@@ -81,7 +81,8 @@ dVideo.extension = function( client ) {
         client.bds.provides.push( 'PEER' );
         dVideo.create_phone( client );
         
-        // Event bindings
+        
+        // PEER events
         client.bind( 'peer.request', function( event ) { dVideo.phone.signal.request( event ); } );
         //client.bind( 'BDS.PEER.ACK', function( event ) { dVideo.phone.signal.ack( event ); } );
         //client.bind( 'BDS.PEER.REJECT', function( event ) { dVideo.phone.signal.reject( event ); } );
@@ -91,6 +92,11 @@ dVideo.extension = function( client ) {
         //client.bind( 'peer.offer', function( event ) { dVideo.phone.signal.offer( event ); } );
         //client.bind( 'peer.answer', function( event ) { dVideo.phone.signal.answer( event ); } );
         client.bind( 'peer.close', function( event ) { dVideo.phone.signal.close( event ); } );
+        
+        
+        // Assorted dAmn events
+        client.bind( 'recv_part', function( event ) { handle.recv_part( event ); } );
+        
         
         client.ui.control.add_button({
             label: '',
@@ -110,6 +116,11 @@ dVideo.extension = function( client ) {
                 var ns = cui.raw;
                 var user = cui.namespace.substr(1);
                 var title = 'Private Call';
+                
+                if( client.channel( ns ).get_usernames(  ).indexOf( user ) == -1 ) {
+                    alert( 'Other user must be in the channel before calling.' );
+                    return;
+                }
                                 
                 dVideo.phone.dial( ns, ns + ':' + title, cui.namespace, title, user );
             }
@@ -129,6 +140,20 @@ dVideo.extension = function( client ) {
      * Handle events.
      */
     var handle = {
+        
+        recv_part: function( event ) {
+        
+            var call = dVideo.phone.call;
+            
+            if( !call )
+                return;
+            
+            if( event.ns != call.ns )
+                return;
+            
+            dVideo.phone.hangup( call );
+        
+        }
         
     };
     
@@ -241,8 +266,24 @@ dVideo.Phone.prototype.dial = function( bds, pns, ns, title, user ) {
     if( ns[0] != '@' )
         return;
                 
-    var call = client.bds.peer.open( bds, pns, user, dVideo.APPNAME );
+    var call = client.bds.peer.open( bds, pns, user, dVideo.APPNAME, dVideo.APPVERSION );
     var peer = call.new_peer( user );
+    
+    
+    call.onclose = function(  ) {
+    
+        dVideo.phone.call = null;
+        client.ui.chatbook.channel( call.ns ).server_message( 'Call Ended' );
+    
+    };
+    
+    peer.onclose = function(  ) {
+    
+        console.log('> peer connection closed.' );
+        call.close();
+    
+    };
+    
     
     var done = function(  ) {
         call.signal.request( );
@@ -277,10 +318,11 @@ dVideo.Phone.prototype.dial = function( bds, pns, ns, title, user ) {
 dVideo.Phone.prototype.incoming = function( call, peer ) {
 
     var client = this.client;
+    var pnotice = null;
     
     if( this.call == null ) {
         
-        var pnotice = client.ui.pager.notice({
+        pnotice = client.ui.pager.notice({
             'ref': 'call-' + peer.user,
             'icon': '<img src="' + wsc.dAmn.avatar.src(peer.user,
                 client.channel(call.ns).info.members[peer.user].usericon) + '" />',
@@ -314,6 +356,26 @@ dVideo.Phone.prototype.incoming = function( call, peer ) {
         
         pnotice.onclose = function(  ) {
             call.signal.reject( peer.user );
+            pnotice = null;
+        };
+        
+        peer.onclose = function(  ) {
+    
+            console.log('> close',peer);
+            call.close( );
+            
+            if( !pnotice )
+                return;
+            
+            client.ui.pager.remove_notice( pnotice );
+        
+        };
+        
+        call.onclose = function(  ) {
+            
+            dVideo.phone.call = null;
+            client.ui.chatbook.channel( call.ns ).server_message( 'Call Ended' );
+    
         };
     
         return;
@@ -358,8 +420,27 @@ dVideo.Phone.prototype.incoming = function( call, peer ) {
     };
     
     peer.onremotedescription = function(  ) {
-        // We have our answer here, so everything should be fine and dandy.
+        client.ui.chatbook.channel( call.ns ).server_message( 'Call Started' );
         peer.persist();
+    };
+    
+    peer.onclose = function(  ) {
+    
+        console.log('> close',peer);
+        call.close( );
+        
+        if( !pnotice )
+            return;
+        
+        client.ui.pager.remove_notice( pnotice );
+    
+    };
+    
+    call.onclose = function(  ) {
+    
+        dVideo.phone.call = null;
+        client.ui.chatbook.channel( call.ns ).server_message( 'Call Ended' );
+    
     };
     
     peer.create_offer();
@@ -480,7 +561,6 @@ dVideo.Phone.prototype.viewport = function( call, peer ) {
     
         return function(  ) {
             var button = pui.find( this );
-            console.log( button );
             var remote = button.hasClass('remote');
         
             if( button.hasClass( 'paused' ) ) {
@@ -578,7 +658,6 @@ dVideo.Phone.prototype.viewport = function( call, peer ) {
     peer.remotevideo = [];
     
     peer.onremotestream = function(  ) {
-        console.log( '> adding remote video' );
         rvid[0].src = URL.createObjectURL( peer.remote_stream );
         peer.remotemic = peer.remote_stream.getAudioTracks();
         peer.remotevideo = peer.remote_stream.getVideoTracks();
@@ -606,10 +685,7 @@ dVideo.Phone.prototype.hangup = function( call, peer ) {
         return;
     }
     
-    call.signal.close( this.client.settings.username );
-    
-    peer.onclose = function() {};
-    peer.close();
+    call.close();
 
 };
 
@@ -696,7 +772,6 @@ dVideo.SignalHandler.prototype.request = function( event ) {
     
     peer.onicecompleted = function(  ) {
         console.log('> finished ice.');
-        console.log( peer.pc.getRemoteStreams() );
     };
     
     peer.onremotedescription = function(  ) {
@@ -705,13 +780,15 @@ dVideo.SignalHandler.prototype.request = function( event ) {
 
     peer.onlocaldescription = function(  ) {
         call.signal.answer( peer );
+        dVideo.phone.client.ui.chatbook.channel( call.ns ).server_message( 'Call Started' );
+        peer.persist();
     };
     
     peer.onclose = function(  ) {
-        dVideo.phone.destroy_call( call );
+        call.close( );
+        phone.client.client.ui.pager.remove_notice( pnotice );
     };
     
-    // TODO: Tell the user about the call.
     phone.incoming( call, peer );
     
 
@@ -760,7 +837,7 @@ dVideo.SignalHandler.prototype.accept = function( event ) {
     // Set event callbacks.
     peer.onicecompleted = function(  ) {
         console.log('> finished ice.');
-        console.log( peer.pc.getRemoteStreams() );
+        
         if( peer.remote_stream != null )
             return;
         
@@ -780,11 +857,13 @@ dVideo.SignalHandler.prototype.accept = function( event ) {
     
     peer.onremotedescription = function(  ) {
         // We have our answer here, so everything should be fine and dandy.
+        dVideo.phone.client.ui.chatbook.channel( call.ns ).server_message( 'Call Started' );
         peer.persist();
     };
     
     peer.onclose = function(  ) {
-        dVideo.phone.destroy_call( call );
+        call.close( );
+        phone.client.client.ui.pager.remove_notice( pnotice );
     };
     
     peer.create_offer();

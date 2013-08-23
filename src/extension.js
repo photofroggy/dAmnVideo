@@ -10,7 +10,8 @@ dVideo.extension = function( client ) {
         client.bds.provides.push( 'PEER' );
         dVideo.create_phone( client );
         
-        // Event bindings
+        
+        // PEER events
         client.bind( 'peer.request', function( event ) { dVideo.phone.signal.request( event ); } );
         //client.bind( 'BDS.PEER.ACK', function( event ) { dVideo.phone.signal.ack( event ); } );
         //client.bind( 'BDS.PEER.REJECT', function( event ) { dVideo.phone.signal.reject( event ); } );
@@ -20,6 +21,11 @@ dVideo.extension = function( client ) {
         //client.bind( 'peer.offer', function( event ) { dVideo.phone.signal.offer( event ); } );
         //client.bind( 'peer.answer', function( event ) { dVideo.phone.signal.answer( event ); } );
         client.bind( 'peer.close', function( event ) { dVideo.phone.signal.close( event ); } );
+        
+        
+        // Assorted dAmn events
+        client.bind( 'recv_part', function( event ) { handle.recv_part( event ); } );
+        
         
         client.ui.control.add_button({
             label: '',
@@ -39,6 +45,11 @@ dVideo.extension = function( client ) {
                 var ns = cui.raw;
                 var user = cui.namespace.substr(1);
                 var title = 'Private Call';
+                
+                if( client.channel( ns ).get_usernames(  ).indexOf( user ) == -1 ) {
+                    alert( 'Other user must be in the channel before calling.' );
+                    return;
+                }
                                 
                 dVideo.phone.dial( ns, ns + ':' + title, cui.namespace, title, user );
             }
@@ -58,6 +69,20 @@ dVideo.extension = function( client ) {
      * Handle events.
      */
     var handle = {
+        
+        recv_part: function( event ) {
+        
+            var call = dVideo.phone.call;
+            
+            if( !call )
+                return;
+            
+            if( event.ns != call.ns )
+                return;
+            
+            dVideo.phone.hangup( call );
+        
+        }
         
     };
     
