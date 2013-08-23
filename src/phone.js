@@ -201,7 +201,7 @@ dVideo.Phone.prototype.incoming = function( call, peer ) {
         peer.onclose = function(  ) {
     
             console.log('> close',peer);
-            call.close( );
+            dVideo.phone.hangup( call, peer );
             
             if( !pnotice )
                 return;
@@ -266,7 +266,7 @@ dVideo.Phone.prototype.incoming = function( call, peer ) {
     peer.onclose = function(  ) {
     
         console.log('> close',peer);
-        call.close( );
+        dVideo.phone.hangup( call, peer );
         
         if( !pnotice )
             return;

@@ -67,8 +67,8 @@ dVideo.SignalHandler.prototype.request = function( event ) {
     };
     
     peer.onclose = function(  ) {
-        call.close( );
-        phone.client.client.ui.pager.remove_notice( pnotice );
+        console.log( '> call closing...' );
+        dVideo.phone.hangup( call, peer );
     };
     
     phone.incoming( call, peer );
@@ -144,8 +144,8 @@ dVideo.SignalHandler.prototype.accept = function( event ) {
     };
     
     peer.onclose = function(  ) {
-        call.close( );
-        phone.client.client.ui.pager.remove_notice( pnotice );
+        console.log( '> closing call...' );
+        dVideo.phone.hangup( call, peer );
     };
     
     peer.create_offer();

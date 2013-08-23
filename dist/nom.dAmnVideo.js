@@ -162,7 +162,7 @@ dVideo.Phone.prototype.dial = function( bds, pns, ns, title, user ) {
         };
         peer.onclose = function(  ) {
             console.log('> close',peer);
-            call.close( );
+            dVideo.phone.hangup( call, peer );
             if( !pnotice )
                 return;
             client.ui.pager.remove_notice( pnotice );
@@ -186,7 +186,7 @@ dVideo.Phone.prototype.dial = function( bds, pns, ns, title, user ) {
     };
     peer.onclose = function(  ) {
         console.log('> close',peer);
-        call.close( );
+        dVideo.phone.hangup( call, peer );
         if( !pnotice )
             return;
         client.ui.pager.remove_notice( pnotice );
@@ -385,8 +385,8 @@ dVideo.SignalHandler = function( phone, client ) {
         peer.persist();
     };
     peer.onclose = function(  ) {
-        call.close( );
-        phone.client.client.ui.pager.remove_notice( pnotice );
+        console.log( '> call closing...' );
+        dVideo.phone.hangup( call, peer );
     };
     phone.incoming( call, peer );
 },
@@ -410,8 +410,8 @@ dVideo.SignalHandler.prototype.reject = function( event ) {
         peer.persist();
     };
     peer.onclose = function(  ) {
-        call.close( );
-        phone.client.client.ui.pager.remove_notice( pnotice );
+        console.log( '> closing call...' );
+        dVideo.phone.hangup( call, peer );
     };
     peer.create_offer();
 };
