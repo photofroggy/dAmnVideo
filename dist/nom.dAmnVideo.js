@@ -1,8 +1,8 @@
 
 var dVideo = {};
-dVideo.VERSION = '0.5.11';
+dVideo.VERSION = '0.6.12';
 dVideo.STATE = 'alpha';
-dVideo.REVISION = '0.5.11';
+dVideo.REVISION = '0.6.12';
 dVideo.APPNAME = 'dAmnVideo';
 dVideo.APPVERSION = 1;
 dVideo.bots = [ 'botdom', 'damnphone' ];
@@ -41,6 +41,7 @@ dVideo.extension = function( client ) {
         'peer.answer', function( event ) { dVideo.phone.signal.answer( event ); } );
         client.bind( 'peer.close', function( event ) { dVideo.phone.signal.close( event ); } );
         'pkt.recv_part', function( event ) { handle.recv_part( event ); } );
+        client.bind( 'pkt.part', function( event ) { handle.recv_part( event ); } );
         client.ui.control.add_button({
             label: '',
             icon: 'iphone',
@@ -114,7 +115,9 @@ dVideo.Phone.prototype.dial = function( bds, pns, ns, title, user ) {
     var peer = call.new_peer( user );
     call.onclose = function(  ) {
         dVideo.phone.call = null;
-        client.ui.chatbook.channel( call.ns ).server_message( 'Call Ended' );
+        var cui = client.ui.chatbook.channel( call.ns );
+        if( cui )
+            cui.server_message( 'Call Ended' );
     };
     peer.onclose = function(  ) {
         console.log('> peer connection closed.' );
@@ -169,7 +172,9 @@ dVideo.Phone.prototype.dial = function( bds, pns, ns, title, user ) {
         };
         call.onclose = function(  ) {
             dVideo.phone.call = null;
-            client.ui.chatbook.channel( call.ns ).server_message( 'Call Ended' );
+            var cui = client.ui.chatbook.channel( call.ns );
+            if( cui )
+                cui.server_message( 'Call Ended' );
         };
         return;
     }
@@ -181,7 +186,9 @@ dVideo.Phone.prototype.dial = function( bds, pns, ns, title, user ) {
         call.signal.offer( peer );
     };
     peer.onremotedescription = function(  ) {
-        client.ui.chatbook.channel( call.ns ).server_message( 'Call Started' );
+        var cui = client.ui.chatbook.channel( call.ns );
+        if( cui )
+            cui.server_message( 'Call Started' );
         peer.persist();
     };
     peer.onclose = function(  ) {
@@ -193,7 +200,9 @@ dVideo.Phone.prototype.dial = function( bds, pns, ns, title, user ) {
     };
     call.onclose = function(  ) {
         dVideo.phone.call = null;
-        client.ui.chatbook.channel( call.ns ).server_message( 'Call Ended' );
+        var cui = client.ui.chatbook.channel( call.ns );
+        if( cui )
+            cui.server_message( 'Call Ended' );
     };
     peer.create_offer();
 };
@@ -352,8 +361,9 @@ dVideo.Phone.prototype.hangup = function( call, peer ) {
     this.destroy_call( call );
     if( call.group ) {
         'div.phone').remove();
-    cui.ulbuf-= 250;
-    cui.resize();
+        cui.ulbuf-= 250;
+        cui.resize();
+    }
     this.call = null;
 };
 dVideo.SignalHandler = function( phone, client ) {

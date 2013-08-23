@@ -112,7 +112,9 @@ dVideo.Phone.prototype.dial = function( bds, pns, ns, title, user ) {
     call.onclose = function(  ) {
     
         dVideo.phone.call = null;
-        client.ui.chatbook.channel( call.ns ).server_message( 'Call Ended' );
+        var cui = client.ui.chatbook.channel( call.ns );
+        if( cui )
+            cui.server_message( 'Call Ended' );
     
     };
     
@@ -213,7 +215,9 @@ dVideo.Phone.prototype.incoming = function( call, peer ) {
         call.onclose = function(  ) {
             
             dVideo.phone.call = null;
-            client.ui.chatbook.channel( call.ns ).server_message( 'Call Ended' );
+            var cui = client.ui.chatbook.channel( call.ns );
+            if( cui )
+                cui.server_message( 'Call Ended' );
     
         };
     
@@ -259,7 +263,10 @@ dVideo.Phone.prototype.incoming = function( call, peer ) {
     };
     
     peer.onremotedescription = function(  ) {
-        client.ui.chatbook.channel( call.ns ).server_message( 'Call Started' );
+        var cui = client.ui.chatbook.channel( call.ns );
+        if( cui )
+            cui.server_message( 'Call Started' );
+        
         peer.persist();
     };
     
@@ -278,7 +285,9 @@ dVideo.Phone.prototype.incoming = function( call, peer ) {
     call.onclose = function(  ) {
     
         dVideo.phone.call = null;
-        client.ui.chatbook.channel( call.ns ).server_message( 'Call Ended' );
+        var cui = client.ui.chatbook.channel( call.ns );
+        if( cui )
+            cui.server_message( 'Call Ended' );
     
     };
     
@@ -547,9 +556,11 @@ dVideo.Phone.prototype.destroy_call = function( call ) {
     
     var cui = this.client.ui.chatbook.channel( call.ns );
     
-    cui.el.m.find('div.phone').remove();
-    cui.ulbuf-= 250;
-    cui.resize();
+    if( cui ) {
+        cui.el.m.find('div.phone').remove();
+        cui.ulbuf-= 250;
+        cui.resize();
+    }
     
     this.call = null;
 

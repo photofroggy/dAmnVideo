@@ -25,6 +25,7 @@ dVideo.extension = function( client ) {
         
         // Assorted dAmn events
         client.bind( 'pkt.recv_part', function( event ) { handle.recv_part( event ); } );
+        client.bind( 'pkt.part', function( event ) { handle.recv_part( event ); } );
         
         
         client.ui.control.add_button({
