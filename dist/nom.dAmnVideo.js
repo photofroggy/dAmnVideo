@@ -5,26 +5,12 @@ dVideo.STATE = 'alpha';
 dVideo.REVISION = '0.6.12';
 dVideo.APPNAME = 'dAmnVideo';
 dVideo.APPVERSION = 1;
-dVideo.bots = [ 'botdom', 'damnphone' ];
 dVideo.peer_options = {
     iceServers: [
         { url: 'stun:stun.l.google.com:19302' }
     ]
 };
 dVideo.phone = null;
-dVideo.signal = null;
-dVideo.local = {};
-dVideo.local.stream = null;
-dVideo.local.url = null;
-dVideo.remote = {};
-dVideo.remote._empty = {
-    video: null,
-    audio: null,
-    conn: null
-};
-dVideo.chan = {};
-dVideo.chan.group = false;
-dVideo.chan.calls = [];
 dVideo.extension = function( client ) {
     if( !wsc.dAmn.BDS.Peer.RTC.PeerConnection )
         return;
@@ -120,7 +106,6 @@ dVideo.Phone.prototype.dial = function( bds, pns, ns, title, user ) {
             cui.server_message( 'Call Ended' );
     };
     peer.onclose = function(  ) {
-        console.log('> peer connection closed.' );
         call.close();
     };
     var done = function(  ) {
@@ -129,6 +114,19 @@ dVideo.Phone.prototype.dial = function( bds, pns, ns, title, user ) {
     this.viewport( call, peer );
     this.get_media(
         function(  ) {
+            call.set_local_stream( dVideo.phone.stream );
+            peer.set_local_stream( dVideo.phone.stream );
+            done();
+        }, done
+    );
+    this.call = call;
+    return call;
+};
+dVideo.Phone.prototype.incoming = function( call, peer ) {
+    var client = this.client;
+    var pnotice = null;
+    if( this.call == null ) {
+        pnotice = client.ui.pager.notice({
             'ref': 'call-' + peer.user,
             'icon': '<img src="' + wsc.dAmn.avatar.src(peer.user,
                 client.channel(call.ns).info.members[peer.user].usericon) + '" />',
@@ -164,7 +162,6 @@ dVideo.Phone.prototype.dial = function( bds, pns, ns, title, user ) {
             pnotice = null;
         };
         peer.onclose = function(  ) {
-            console.log('> close',peer);
             dVideo.phone.hangup( call, peer );
             if( !pnotice )
                 return;
@@ -192,7 +189,6 @@ dVideo.Phone.prototype.dial = function( bds, pns, ns, title, user ) {
         peer.persist();
     };
     peer.onclose = function(  ) {
-        console.log('> close',peer);
         dVideo.phone.hangup( call, peer );
         if( !pnotice )
             return;
@@ -218,7 +214,19 @@ dVideo.Phone.prototype.answer = function( call, peer ) {
     this.viewport( call, peer );
     this.get_media(
         function(  ) {
-            '<div class="phone private">\
+            call.set_local_stream( dVideo.phone.stream );
+            peer.set_local_stream( dVideo.phone.stream );
+            done();
+        }, done
+    );
+};
+dVideo.Phone.prototype.viewport = function( call, peer ) {
+    var cui = this.client.ui.chatbook.channel( call.ns );
+    cui.ulbuf+= 250;
+    cui.resize();
+    var height = cui.el.l.p.height();
+    cui.el.l.p.after(
+        '<div class="phone private">\
             <div class="title">\
                 <h2>' + call.title + '</h2>\
             </div>\

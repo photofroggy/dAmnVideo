@@ -120,7 +120,6 @@ dVideo.Phone.prototype.dial = function( bds, pns, ns, title, user ) {
     
     peer.onclose = function(  ) {
     
-        console.log('> peer connection closed.' );
         call.close();
     
     };
@@ -134,11 +133,8 @@ dVideo.Phone.prototype.dial = function( bds, pns, ns, title, user ) {
     
     this.get_media(
         function(  ) {
-            // Set as the local stream on the call
-            // and set up a view port.
             call.set_local_stream( dVideo.phone.stream );
             peer.set_local_stream( dVideo.phone.stream );
-            // TODO: set up viewport
             done();
         }, done
     );
@@ -201,8 +197,7 @@ dVideo.Phone.prototype.incoming = function( call, peer ) {
         };
         
         peer.onclose = function(  ) {
-    
-            console.log('> close',peer);
+            
             dVideo.phone.hangup( call, peer );
             
             if( !pnotice )
@@ -272,7 +267,6 @@ dVideo.Phone.prototype.incoming = function( call, peer ) {
     
     peer.onclose = function(  ) {
     
-        console.log('> close',peer);
         dVideo.phone.hangup( call, peer );
         
         if( !pnotice )
@@ -319,11 +313,8 @@ dVideo.Phone.prototype.answer = function( call, peer ) {
     
     this.get_media(
         function(  ) {
-            // Set as the local stream on the call
-            // and set up a view port.
             call.set_local_stream( dVideo.phone.stream );
             peer.set_local_stream( dVideo.phone.stream );
-            // TODO: set up viewport
             done();
         }, done
     );
