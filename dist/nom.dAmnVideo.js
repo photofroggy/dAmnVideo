@@ -362,7 +362,6 @@ dVideo.Phone.prototype.viewport = function( call, peer ) {
         rvid[0].src = URL.createObjectURL( peer.remote_stream );
         peer.remotemic = peer.remote_stream.getAudioTracks();
         peer.remotevideo = peer.remote_stream.getVideoTracks();
-        console.log( rvid[0].src );
     };
 };
 dVideo.Phone.prototype.hangup = function( call, peer ) {
