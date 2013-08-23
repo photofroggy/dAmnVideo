@@ -70,6 +70,11 @@ dVideo.SignalHandler.prototype.request = function( event ) {
         dVideo.phone.hangup( call, peer );
     };
     
+    peer.onreject = function( reason ) {
+        dVideo.phone.client.ui.chatbook.channel( call.ns ).server_message( 'Call Rejected', reason );
+        dVideo.phone.hangup( call, peer );
+    };
+    
     phone.incoming( call, peer );
     
 
@@ -142,6 +147,11 @@ dVideo.SignalHandler.prototype.accept = function( event ) {
     };
     
     peer.onclose = function(  ) {
+        dVideo.phone.hangup( call, peer );
+    };
+    
+    peer.onreject = function( reason ) {
+        dVideo.phone.client.ui.chatbook.channel( call.ns ).server_message( 'Call Rejected', reason );
         dVideo.phone.hangup( call, peer );
     };
     

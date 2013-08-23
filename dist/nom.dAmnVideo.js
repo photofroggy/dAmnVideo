@@ -99,14 +99,25 @@ dVideo.Phone.prototype.dial = function( bds, pns, ns, title, user ) {
         return;
     var call = client.bds.peer.open( bds, pns, user, dVideo.APPNAME, dVideo.APPVERSION );
     var peer = call.new_peer( user );
+    var phone = this;
     call.onclose = function(  ) {
-        dVideo.phone.call = null;
+        phone.call = null;
         var cui = client.ui.chatbook.channel( call.ns );
         if( cui )
             cui.server_message( 'Call Ended' );
     };
+    call.ontimeoud = function(  ) {
+        var cui = client.ui.chatbook.channel( call.ns );
+        if( !cui )
+            return;
+        cui.server_message( 'Call Failed', peer.user + ' is not using a compatible client.' );
+    };
     peer.onclose = function(  ) {
         call.close();
+    };
+    peer.onreject = function( reason ) {
+        phone.client.ui.chatbook.channel( call.ns ).server_message( 'Call Rejected', reason );
+        phone.hangup( call, peer );
     };
     var done = function(  ) {
         call.signal.request( );
@@ -167,6 +178,10 @@ dVideo.Phone.prototype.incoming = function( call, peer ) {
                 return;
             client.ui.pager.remove_notice( pnotice );
         };
+        peer.onreject = function( reason ) {
+            dVideo.phone.client.ui.chatbook.channel( call.ns ).server_message( 'Call Rejected', reason );
+            dVideo.phone.hangup( call, peer );
+        };
         call.onclose = function(  ) {
             dVideo.phone.call = null;
             var cui = client.ui.chatbook.channel( call.ns );
@@ -193,6 +208,10 @@ dVideo.Phone.prototype.incoming = function( call, peer ) {
         if( !pnotice )
             return;
         client.ui.pager.remove_notice( pnotice );
+    };
+    peer.onreject = function( reason ) {
+        dVideo.phone.client.ui.chatbook.channel( call.ns ).server_message( 'Call Rejected', reason );
+        dVideo.phone.hangup( call, peer );
     };
     call.onclose = function(  ) {
         dVideo.phone.call = null;
@@ -404,6 +423,10 @@ dVideo.SignalHandler = function( phone, client ) {
     peer.onclose = function(  ) {
         dVideo.phone.hangup( call, peer );
     };
+    peer.onreject = function( reason ) {
+        dVideo.phone.client.ui.chatbook.channel( call.ns ).server_message( 'Call Rejected', reason );
+        dVideo.phone.hangup( call, peer );
+    };
     phone.incoming( call, peer );
 },
 dVideo.SignalHandler.prototype.ack = function( event ) {};
@@ -425,6 +448,10 @@ dVideo.SignalHandler.prototype.reject = function( event ) {
         peer.persist();
     };
     peer.onclose = function(  ) {
+        dVideo.phone.hangup( call, peer );
+    };
+    peer.onreject = function( reason ) {
+        dVideo.phone.client.ui.chatbook.channel( call.ns ).server_message( 'Call Rejected', reason );
         dVideo.phone.hangup( call, peer );
     };
     peer.create_offer();

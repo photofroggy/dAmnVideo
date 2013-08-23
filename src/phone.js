@@ -107,14 +107,26 @@ dVideo.Phone.prototype.dial = function( bds, pns, ns, title, user ) {
                 
     var call = client.bds.peer.open( bds, pns, user, dVideo.APPNAME, dVideo.APPVERSION );
     var peer = call.new_peer( user );
+    var phone = this;
     
     
     call.onclose = function(  ) {
     
-        dVideo.phone.call = null;
+        phone.call = null;
         var cui = client.ui.chatbook.channel( call.ns );
         if( cui )
             cui.server_message( 'Call Ended' );
+    
+    };
+    
+    call.ontimeoud = function(  ) {
+    
+        var cui = client.ui.chatbook.channel( call.ns );
+        
+        if( !cui )
+            return;
+        
+        cui.server_message( 'Call Failed', peer.user + ' is not using a compatible client.' );
     
     };
     
@@ -122,6 +134,11 @@ dVideo.Phone.prototype.dial = function( bds, pns, ns, title, user ) {
     
         call.close();
     
+    };
+    
+    peer.onreject = function( reason ) {
+        phone.client.ui.chatbook.channel( call.ns ).server_message( 'Call Rejected', reason );
+        phone.hangup( call, peer );
     };
     
     
@@ -206,6 +223,11 @@ dVideo.Phone.prototype.incoming = function( call, peer ) {
             client.ui.pager.remove_notice( pnotice );
         
         };
+    
+        peer.onreject = function( reason ) {
+            dVideo.phone.client.ui.chatbook.channel( call.ns ).server_message( 'Call Rejected', reason );
+            dVideo.phone.hangup( call, peer );
+        };
         
         call.onclose = function(  ) {
             
@@ -274,6 +296,11 @@ dVideo.Phone.prototype.incoming = function( call, peer ) {
         
         client.ui.pager.remove_notice( pnotice );
     
+    };
+    
+    peer.onreject = function( reason ) {
+        dVideo.phone.client.ui.chatbook.channel( call.ns ).server_message( 'Call Rejected', reason );
+        dVideo.phone.hangup( call, peer );
     };
     
     call.onclose = function(  ) {
