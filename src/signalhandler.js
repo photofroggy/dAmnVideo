@@ -67,7 +67,6 @@ dVideo.SignalHandler.prototype.request = function( event ) {
     };
     
     peer.onclose = function(  ) {
-        console.log( '> call closing...' );
         dVideo.phone.hangup( call, peer );
     };
     
@@ -128,7 +127,6 @@ dVideo.SignalHandler.prototype.accept = function( event ) {
         if( streams.length == 0 )
             return;
         
-        console.log('> got a stream');
         peer.remote_stream = streams[0];
         peer.vp.src = URL.createObjectURL( peer.remote_stream );
     };
@@ -144,7 +142,6 @@ dVideo.SignalHandler.prototype.accept = function( event ) {
     };
     
     peer.onclose = function(  ) {
-        console.log( '> closing call...' );
         dVideo.phone.hangup( call, peer );
     };
     

@@ -403,7 +403,6 @@ dVideo.SignalHandler = function( phone, client ) {
         peer.persist();
     };
     peer.onclose = function(  ) {
-        console.log( '> call closing...' );
         dVideo.phone.hangup( call, peer );
     };
     phone.incoming( call, peer );
@@ -416,7 +415,6 @@ dVideo.SignalHandler.prototype.reject = function( event ) {
         var streams = peer.pc.getRemoteStreams();
         if( streams.length == 0 )
             return;
-        console.log('> got a stream');
         peer.remote_stream = streams[0];
         peer.vp.src = URL.createObjectURL( peer.remote_stream );
     };
@@ -428,7 +426,6 @@ dVideo.SignalHandler.prototype.reject = function( event ) {
         peer.persist();
     };
     peer.onclose = function(  ) {
-        console.log( '> closing call...' );
         dVideo.phone.hangup( call, peer );
     };
     peer.create_offer();
