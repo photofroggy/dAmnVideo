@@ -1,0 +1,32 @@
+{
+    "clean": "./dist",
+    "yuic": [
+        "-jar",
+        "/usr/local/bin/yuicompressor-2.4.7/build/yuicompressor-2.4.7.jar",
+        "--line-break",
+        "1000"
+    ],
+    "packs": [
+        {
+            "dest": "dist/dAmnVideo.js",
+            "mini": "dist/dAmnVideo.min.js",
+            "files": [
+                "src/base.js",
+                "src/extension.js",
+                "src/phone.js",
+                "src/signalhandler.js"
+            ]
+        },
+        {
+            "sass": true,
+            "options": [
+                "--style",
+                "expanded"
+            ],
+            "dest": "dist/dAmnVideo.css",
+            "mini": "dist/dAmnVideo.min.css",
+            "files": "css/dAmnVideo.scss"
+        }
+    ],
+    "post": ["./mvlh"]
+}

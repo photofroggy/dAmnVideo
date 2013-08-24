@@ -1,0 +1,76 @@
+
+div.phone {
+    
+    &.private {
+        width: 250px;
+        float: left;
+        
+        .title {
+            text-align: center;
+            line-height: 3em;
+            
+            h2 {
+                font-size: 26px;
+            }
+        }
+        
+        div.viewport {
+            width: 250px;
+            height: 205px;
+            margin-bottom: 10px;
+            border: 1px solid white;
+            background-color: black;
+            color: white;
+            
+            div.video {
+                text-align: center;
+                height: 180px;
+                background-color: black;
+                border-bottom: 1px solid white;
+                
+                video {
+                    height: 180px;
+                    width: 240px;
+                }
+            }
+            
+            div.label {
+                height: 25px;
+                overflow: auto;
+                
+                span.label {
+                    float: left;
+                    overflow: auto;
+                    padding: 2px 5px;
+                }
+                
+                ul.control {
+                    float: right;
+                    overflow: auto;
+                    list-style: none;
+                    
+                    li {
+                        display: inline-block;
+                        padding: 2px 5px 2px 0px;
+                        
+                        a.toggle {
+                            color: white;
+                        }
+                    }
+                }
+            }
+        }
+        
+        div.control {
+            text-align: center;
+            ul {
+                list-style: none;
+                li {
+                    display: inline-block;
+                }
+            }
+        }
+    }
+    
+}
+
