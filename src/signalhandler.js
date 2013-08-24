@@ -41,7 +41,7 @@ dVideo.SignalHandler.prototype.request = function( event ) {
     }
     
     if( this.client.away.on ) {
-        call.signal.reject( peer.user, 'Away; ' + client.away.reason );
+        call.signal.reject( peer.user, call.user + ' is away; ' + client.away.reason );
         return false;
     }
     

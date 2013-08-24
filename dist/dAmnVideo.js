@@ -228,11 +228,13 @@ dVideo.Phone.prototype.dial = function( bds, pns, ns, title, user ) {
     var peer = call.new_peer( user );
     var phone = this;
     
-    
     call.onclose = function(  ) {
     
-        phone.call = null;
+        if( !dVideo.phone.call )
+            return;
+        
         var cui = client.ui.chatbook.channel( call.ns );
+        
         if( cui )
             cui.server_message( 'Call Ended' );
     
@@ -347,11 +349,14 @@ dVideo.Phone.prototype.incoming = function( call, peer ) {
             dVideo.phone.client.ui.chatbook.channel( call.ns ).server_message( 'Call Rejected', reason );
             dVideo.phone.hangup( call, peer );
         };
-        
+    
         call.onclose = function(  ) {
-            
-            dVideo.phone.call = null;
+    
+            if( !dVideo.phone.call )
+                return;
+        
             var cui = client.ui.chatbook.channel( call.ns );
+        
             if( cui )
                 cui.server_message( 'Call Ended' );
     
@@ -424,8 +429,11 @@ dVideo.Phone.prototype.incoming = function( call, peer ) {
     
     call.onclose = function(  ) {
     
-        dVideo.phone.call = null;
+        if( !dVideo.phone.call )
+            return;
+        
         var cui = client.ui.chatbook.channel( call.ns );
+        
         if( cui )
             cui.server_message( 'Call Ended' );
     
@@ -744,7 +752,7 @@ dVideo.SignalHandler.prototype.request = function( event ) {
     }
     
     if( this.client.away.on ) {
-        call.signal.reject( peer.user, 'Away; ' + client.away.reason );
+        call.signal.reject( peer.user, call.user + ' is away; ' + client.away.reason );
         return false;
     }
     
