@@ -7,7 +7,6 @@ dVideo.extension = function( client ) {
     
     var init = function (  ) {
         
-        client.bds.provides.push( 'PEER' );
         dVideo.create_phone( client );
         
         

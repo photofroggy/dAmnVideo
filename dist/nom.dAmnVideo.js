@@ -1,8 +1,8 @@
 
 var dVideo = {};
-dVideo.VERSION = '0.6.12';
-dVideo.STATE = 'alpha';
-dVideo.REVISION = '0.6.12';
+dVideo.VERSION = '1.0.13';
+dVideo.STATE = 'beta';
+dVideo.REVISION = '0.7.13';
 dVideo.APPNAME = 'dAmnVideo';
 dVideo.APPVERSION = 1;
 dVideo.peer_options = {
@@ -15,7 +15,6 @@ dVideo.extension = function( client ) {
     if( !wsc.dAmn.BDS.Peer.RTC.PeerConnection )
         return;
     var init = function (  ) {
-        client.bds.provides.push( 'PEER' );
         dVideo.create_phone( client );
         'peer.request', function( event ) { dVideo.phone.signal.request( event ); } );
         'BDS.PEER.ACK', function( event ) { dVideo.phone.signal.ack( event ); } );
